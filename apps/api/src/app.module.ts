@@ -1,13 +1,18 @@
 import { Module } from '@nestjs/common';
 import { PrismaModule } from './prisma/prisma.module';
+import { CommonModule } from './common/common.module';
+import { AuthModule } from './auth/auth.module';
+import { WorkspacesModule } from './workspaces/workspaces.module';
+import { SpacesModule } from './spaces/spaces.module';
+import { FoldersModule } from './folders/folders.module';
+import { ListsModule } from './lists/lists.module';
 import { HealthController } from './health.controller';
 
-// Domain modules (WorkspacesModule, SpacesModule, ListsModule, TasksModule,
-// SprintsModule, CustomFieldsModule, CommentsModule, AttachmentsModule, AuthModule)
-// are Week 1-4 deliverables per HANDOFF.md — intentionally not stubbed here so
-// there's no fake-finished scaffolding to unwind.
+// Sprints, Tasks, CustomFields, Comments, Attachments modules are Week 3-8
+// work per HANDOFF.md — not stubbed here for the same reason nothing else
+// in this scaffold is: no fake-finished code to unwind later.
 @Module({
-  imports: [PrismaModule],
+  imports: [PrismaModule, CommonModule, AuthModule, WorkspacesModule, SpacesModule, FoldersModule, ListsModule],
   controllers: [HealthController],
 })
 export class AppModule {}
