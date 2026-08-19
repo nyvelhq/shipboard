@@ -36,38 +36,48 @@ exactly where to start.
   usable immediately.
 - `apps/api` boots, connects to Postgres via Prisma, and serves
   `GET /health` → `{ status: 'ok', db: 'connected' }`.
-- `apps/web` boots and serves one placeholder page. **No product UI
-  exists yet** — this is the actual gap, see below.
+- **Frontend auth + hierarchy flow** — `apps/web` has a working, styled
+  (plain inline styles, no Tailwind yet — see below) flow: `/login`
+  (combined sign-in/sign-up), `/workspaces` (list + create), and
+  `/workspaces/[id]` (Spaces and their Lists, create both inline). Session
+  lives in `localStorage` via `lib/auth-context.tsx` and survives reload.
+  `lib/api.ts` is the typed client for every Week 1-2 endpoint.
 - `docker-compose.yml` for local Postgres + Redis, CI that installs,
   generates the Prisma client, and builds both workspaces on every push.
 
+**Week 1-2 is done.** Verified live in a browser against the real API and
+Postgres, not just a build check: signup → create Workspace → create Space
+→ create List → reload (session persists) → sign out → sign back in with
+the same account. Zero console errors on a clean tab.
+
 ## What does NOT exist yet — deliberately
 
-Nothing here pretends to be further along than it is. Specifically not
-started:
+Nothing here pretends to be further along than it is. This is genuinely
+Week 3-8 territory, not started:
 
-- **Any frontend beyond a placeholder page** — no sign-in form, no
-  Workspace/Space/List UI, no state management setup. This is the
-  immediate next task (Week 1-2's frontend half, see below).
-- Sprints, Tasks, Custom Fields, Comments, Attachments modules — Week 3-8
-  work per the plan.
+- **Tailwind + the component library** the PRD's architecture section
+  recommends. The Week 1-2 frontend uses plain inline styles to avoid
+  build-pipeline setup that wasn't required to hit the acceptance bar —
+  wire up Tailwind/Radix as part of Week 3-4 before the real Task views
+  make hand-written inline styles unmanageable.
+- The Task engine itself: Task CRUD, subtasks, per-List status transitions
+  from the UI, the List view (sortable/filterable/groupable table).
+- Sprints, Custom Fields, Comments, Attachments modules.
 - Socket.IO / real-time layer.
 - The Gantt component decision (Bryntum vs. DHTMLX vs. build) — the PRD
   flags this as a build-or-buy call that should be pinned *before* Week 11,
   not during it.
 
-## Start here — finish Week 1-2, then move to Week 3-4
+## Start here — Week 3-4
 
-The backend half of Week 1-2 is done and verified (see above). What's left
-to close out the milestone:
-
-1. A minimal frontend flow: sign-in form calling `/auth/login`, a page
-   listing the signed-in user's Workspaces (`GET /workspaces`), and a
-   Workspace detail view showing its Spaces and Lists. A table is fine —
-   this is not the Week 3-4 List view, it's just proof the permission model
-   and CRUD work end-to-end from a browser, not just curl.
-2. Once that's in place, Week 1-2 is genuinely done and Week 3-4 (the
-   Task engine) starts clean.
+Per the PRD's plan, Week 3-4 is the Task engine: Task CRUD, subtasks,
+per-List custom statuses (the workflow already exists on every List —
+this is about *using* it, moving a Task between its List's statuses),
+assignees, due dates, priority, and the List view with inline editing. The
+Week 1-2 permission pattern (`WorkspaceMembershipGuard` +
+ownership-chain checks in each service) is the template to extend down to
+Tasks — a Task's parent List must be verified to belong to the Space/
+Workspace in the URL, the same way Folders and Lists already are.
 
 ## Conventions to keep
 

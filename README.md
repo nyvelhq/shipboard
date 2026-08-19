@@ -10,14 +10,16 @@ plan: **[Shipboard PRD & Architecture Plan](https://claude.ai/code/artifact/7d40
 
 ## What's here
 
-A monorepo skeleton — not a built product. Two npm workspaces:
+Week 1-2 of the 12-week plan is done. Two npm workspaces:
 
-- `apps/api` — NestJS + Prisma. Boots, connects to Postgres, exposes one
-  `/health` endpoint. The full data model is already in
-  `apps/api/prisma/schema.prisma`, transcribed directly from the PRD. No
-  domain modules (workspaces, tasks, auth, etc.) exist yet — that's Week 1-4.
-- `apps/web` — Next.js 14 App Router. One placeholder page. No product UI
-  exists yet — that's Week 3-4 onward.
+- `apps/api` — NestJS + Prisma. Auth (signup/login), and permission-checked
+  Workspace → Space → Folder → List CRUD. The full data model from the PRD
+  is in `apps/api/prisma/schema.prisma`, migrated against Postgres.
+- `apps/web` — Next.js 14 App Router. Sign-in/sign-up, a Workspace list,
+  and a Workspace detail view (Spaces + Lists, create both inline).
+
+No Task engine, Sprints, Custom Fields, real-time layer, or Tailwind setup
+yet — that's Week 3-4 onward. See `HANDOFF.md` for the exact boundary.
 
 ## Quickstart
 
