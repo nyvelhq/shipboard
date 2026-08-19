@@ -155,15 +155,11 @@ card once.
 
 ## What does NOT exist yet — deliberately
 
-Nothing here pretends to be further along than it is. Genuinely Week 12
-territory, not started:
+Nothing here pretends to be further along than it is. All of it is a
+legitimate scope decision, not a defect — triage against real user
+feedback before building further, rather than treating this list as a
+backlog to clear mechanically:
 
-- **Tailwind on the Week 1-2 pages.** `/login`, `/workspaces`, and
-  `/workspaces/[id]` still use their original inline styles — Tailwind (v3;
-  v4 changed its PostCSS integration and broke the classic
-  `tailwind.config.ts` + `@tailwind`-directive setup, so it's pinned) is
-  only on the List, Board, Sprints, and Timeline surfaces so far.
-  Migrating the rest is a fast-follow, not a blocker.
 - **Multi-assignee UI.** The schema and API already support multiple
   assignees per Task (`assigneeIds: string[]`); every view treats it as
   single-select for now.
@@ -177,20 +173,34 @@ territory, not started:
   (`blockingTaskId`/`blockedTaskId`) but has no endpoints and no UI — the
   Timeline view doesn't draw dependency arrows. A real feature, not a
   quick add; genuinely out of scope for what got built here.
+- **CORS is wide open** (`app.enableCors()`, no origin allowlist) — fine
+  for local dev, not for a real deployment. Needs an explicit allowed-
+  origins list before this goes anywhere near production.
 
-## Start here — Week 12
+## Where this stands
 
-Per the PRD's plan, Week 12 is hardening: this is the last week before
-"MVP done," and the PRD's own framing is that it's about closing gaps
-above, not adding new features. In priority order, given what's actually
-missing right now: (1) the two verification gaps noted above — a human
-confirming the Board's drag-and-drop gesture in a real browser, since it
-was never fully verified through automation, and (2) the Tailwind
-migration on the four remaining pages, since visual inconsistency is the
-most user-visible unfinished edge in the app right now. Everything else
-in "what does NOT exist yet" is a legitimate scope decision, not a defect
-— triage against real user feedback before building further, rather than
-treating this list as a backlog to clear mechanically.
+All 12 weeks of the PRD's plan are built and verified live against a real
+Postgres instance and a real browser, not just build checks — auth,
+the full Workspace→Space→Folder→List→Task hierarchy with a permission
+model verified against actual ID-guessing attacks, real-time sync over
+Socket.IO, List/Board/Sprints/Timeline views, Custom Fields, Comments,
+Attachments, and Sprint planning with velocity tracking. Every page now
+uses Tailwind consistently — the last three holdouts (`/login`,
+`/workspaces`, `/workspaces/[id]`) were migrated off their original
+Week 1-2 inline styles as the final hardening pass.
+
+**One thing genuinely still needs a human, not an agent:** the Board's
+drag-and-drop gesture was implemented with the standard React HTML5 DnD
+pattern and the exact `updateTask` call it makes was proven correct three
+separate ways (List view dropdown, direct API calls, and the Sprint
+page's status changes) — but the literal mouse-drag gesture itself
+couldn't be confirmed through this session's browser-automation tooling,
+a documented limitation shared by Playwright/Selenium/CDP-based tools
+generally. Drag a card on the Board once in a real browser before calling
+that specific interaction verified.
+
+From here, next work should be driven by actual usage — the "what does
+NOT exist yet" list above, not a mechanical week-by-week continuation.
 
 ## Conventions to keep
 
