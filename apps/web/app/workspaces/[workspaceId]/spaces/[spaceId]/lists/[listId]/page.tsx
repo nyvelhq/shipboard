@@ -2,7 +2,6 @@
 
 import { FormEvent, useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import Link from 'next/link';
 import { ApiError, Task, TaskInput, api } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { useListTasks } from '@/lib/use-list-tasks';
@@ -103,11 +102,8 @@ export default function ListDetailPage() {
 
   return (
     <main className="mx-auto max-w-5xl px-6 py-10">
-      <Link href={`/workspaces/${workspaceId}`} className="text-sm text-teal-700 hover:underline">
-        &larr; Back to workspace
-      </Link>
-      <div className="mb-4 mt-2 flex items-center justify-between">
-        <h1>{loading ? 'Loading…' : list?.name}</h1>
+      <div className="mb-4 flex items-center justify-between">
+        <h1 className="text-2xl">{loading ? 'Loading…' : list?.name}</h1>
         <ViewToggle workspaceId={workspaceId} spaceId={spaceId} listId={listId} active="list" />
       </div>
 

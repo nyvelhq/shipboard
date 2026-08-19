@@ -7,7 +7,7 @@ import { api, ApiError, Workspace } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 
 export default function WorkspacesPage() {
-  const { token, user, ready, logout } = useAuth();
+  const { token, ready } = useAuth();
   const router = useRouter();
   const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
   const [loading, setLoading] = useState(true);
@@ -56,24 +56,7 @@ export default function WorkspacesPage() {
 
   return (
     <main className="mx-auto max-w-2xl px-6 py-12">
-      <div className="mb-6 flex items-baseline justify-between">
-        <div>
-          <h1 className="m-0">Shipboard</h1>
-          <p className="mt-1 text-gray-500">{user?.name}</p>
-        </div>
-        <button
-          type="button"
-          onClick={() => {
-            logout();
-            router.push('/login');
-          }}
-          className="rounded-md border border-gray-300 px-3.5 py-2 text-sm text-gray-700 hover:bg-gray-50"
-        >
-          Sign out
-        </button>
-      </div>
-
-      <h2 className="text-lg">Your workspaces</h2>
+      <h1 className="mb-6 text-2xl">Your workspaces</h1>
       {loading && <p>Loading…</p>}
       {error && <p className="text-red-600">{error}</p>}
       {!loading && workspaces.length === 0 && (

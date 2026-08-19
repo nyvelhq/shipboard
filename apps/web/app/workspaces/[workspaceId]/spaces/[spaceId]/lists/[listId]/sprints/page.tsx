@@ -78,11 +78,8 @@ export default function SprintsPage() {
 
   return (
     <main className="mx-auto max-w-4xl px-6 py-10">
-      <Link href={`/workspaces/${workspaceId}`} className="text-sm text-teal-700 hover:underline">
-        &larr; Back to workspace
-      </Link>
-      <div className="mb-6 mt-2 flex items-center justify-between">
-        <h1>Sprints</h1>
+      <div className="mb-6 flex items-center justify-between">
+        <h1 className="text-2xl">Sprints</h1>
         <ViewToggle workspaceId={workspaceId} spaceId={spaceId} listId={listId} active="sprints" />
       </div>
 

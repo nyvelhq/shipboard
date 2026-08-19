@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import Link from 'next/link';
 import { ApiError, api } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { useListTasks } from '@/lib/use-list-tasks';
@@ -47,11 +46,8 @@ export default function BoardPage() {
 
   return (
     <main className="mx-auto max-w-6xl px-6 py-10">
-      <Link href={`/workspaces/${workspaceId}`} className="text-sm text-teal-700 hover:underline">
-        &larr; Back to workspace
-      </Link>
-      <div className="mb-6 mt-2 flex items-center justify-between">
-        <h1>{loading ? 'Loading…' : list?.name}</h1>
+      <div className="mb-6 flex items-center justify-between">
+        <h1 className="text-2xl">{loading ? 'Loading…' : list?.name}</h1>
         <ViewToggle workspaceId={workspaceId} spaceId={spaceId} listId={listId} active="board" />
       </div>
 

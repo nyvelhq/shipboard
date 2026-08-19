@@ -94,12 +94,7 @@ export default function WorkspaceDetailPage() {
 
   return (
     <main className="mx-auto max-w-3xl px-6 py-12">
-      <p>
-        <Link href="/workspaces" className="text-teal-700 hover:underline">
-          &larr; All workspaces
-        </Link>
-      </p>
-      <h1 className="mb-6">{loading ? 'Loading…' : workspaceName}</h1>
+      <h1 className="mb-6 text-2xl">{loading ? 'Loading…' : workspaceName}</h1>
 
       {error && <p className="text-red-600">{error}</p>}
       {!loading && spaces.length === 0 && (
