@@ -252,14 +252,18 @@ backlog to clear mechanically:
 - **CORS is wide open** (`app.enableCors()`, no origin allowlist) — fine
   for local dev, not for a real deployment. Needs an explicit allowed-
   origins list before this goes anywhere near production.
-- **No invite/add-member flow.** `WorkspaceMember.role` is now load-
-  bearing (see below — it gates Task/Sprint/Space/Custom Field delete),
-  but there's no UI or endpoint to add a second member to a workspace at
-  all, elevated or not — every existing workspace currently has exactly
-  one member, its owner. The role restriction is real and enforced (see
-  the RBAC bullet below for how it was verified), it just has nothing to
-  bite on yet in normal use. This is the natural next thing to build if
-  the role model is going to matter in practice.
+- **No real invitation flow (email link).** What exists instead —
+  `/workspaces/[id]/members`, "Add a member" — is deliberately scoped to
+  *add by email*, not send an invite: this app has no email-sending
+  infrastructure at all (no SendGrid/SES/etc.), and building one is a
+  separate, much bigger piece of work than adding a member. The target
+  needs an existing Shipboard account already; the UI says this
+  directly rather than implying a flow that doesn't exist. Gated to
+  owner/admin (`WorkspacesController.addMember`/`removeMember`), and the
+  workspace owner can't be removed (`Workspace.ownerId` check) so a
+  workspace can't be orphaned. This is what gives the role-gated deletes
+  something real to bite on — see the RBAC bullet above for how the
+  restriction itself was verified before this existed.
 
 ## Where this stands
 
