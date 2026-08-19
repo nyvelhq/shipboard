@@ -18,49 +18,56 @@ exactly where to start.
 - A working npm-workspaces monorepo: `apps/api` (NestJS) + `apps/web`
   (Next.js 14).
 - `apps/api/prisma/schema.prisma` — the **complete** data model from the
-  PRD's schema section, already transcribed into valid Prisma syntax
-  (`users` through `activity_log`, all relations wired). This has not been
-  migrated against a real database yet — that's your first command.
+  PRD's schema section (`users` through `activity_log`), migrated and
+  verified against a live Postgres instance.
+- **Auth** — self-hosted JWT + bcrypt (`POST /auth/signup`,
+  `POST /auth/login`). Deviation from the PRD's Clerk/Auth0 recommendation:
+  no Clerk/Auth0 account was available to wire up, so this is the
+  interim path. See the comment on `User.passwordHash` in
+  `schema.prisma` — swapping to Clerk/Auth0 later means dropping that
+  column, not a redesign.
+- **Workspace → Space → Folder → List CRUD**, fully permission-checked —
+  see `apps/api/src/common/guards/workspace-membership.guard.ts` and the
+  ownership-chain checks in each service (`SpacesService.findOne`, etc).
+  Verified end-to-end against a live DB: a member of Workspace B cannot
+  reach a Workspace A resource by ID-guessing through their own Workspace
+  B URL — it 404s, not 403, so existence is never leaked. New Lists get a
+  default 4-status workflow (Open/In Progress/Review/Done) so they're
+  usable immediately.
 - `apps/api` boots, connects to Postgres via Prisma, and serves
-  `GET /health` → `{ status: 'ok', db: 'connected' }`. This is a real
-  smoke test, not a placeholder — if it doesn't return that, something in
-  your environment setup is wrong before you write a single feature.
-- `apps/web` boots and serves one placeholder page. No product UI exists.
+  `GET /health` → `{ status: 'ok', db: 'connected' }`.
+- `apps/web` boots and serves one placeholder page. **No product UI
+  exists yet** — this is the actual gap, see below.
 - `docker-compose.yml` for local Postgres + Redis, CI that installs,
   generates the Prisma client, and builds both workspaces on every push.
 
 ## What does NOT exist yet — deliberately
 
-No domain modules, no auth, no frontend beyond a placeholder page. Nothing
-here pretends to be further along than it is. Specifically not started:
+Nothing here pretends to be further along than it is. Specifically not
+started:
 
-- Auth (the PRD recommends Clerk or Auth0 — pick one and justify it if you
-  deviate)
-- Every domain module: Workspaces, Spaces, Folders, Lists, Tasks, Sprints,
-  Custom Fields, Comments, Attachments — all Week 1-8 work per the plan
-- Any frontend view (List, Board, Timeline) or state management setup
-- Socket.IO / real-time layer
+- **Any frontend beyond a placeholder page** — no sign-in form, no
+  Workspace/Space/List UI, no state management setup. This is the
+  immediate next task (Week 1-2's frontend half, see below).
+- Sprints, Tasks, Custom Fields, Comments, Attachments modules — Week 3-8
+  work per the plan.
+- Socket.IO / real-time layer.
 - The Gantt component decision (Bryntum vs. DHTMLX vs. build) — the PRD
   flags this as a build-or-buy call that should be pinned *before* Week 11,
-  not during it
+  not during it.
 
-## Start here — Week 1-2 acceptance criteria
+## Start here — finish Week 1-2, then move to Week 3-4
 
-Per the PRD's phased plan, Week 1-2 is "Foundations." Treat these as the
-literal acceptance bar for your first milestone:
+The backend half of Week 1-2 is done and verified (see above). What's left
+to close out the milestone:
 
-1. `npm run --workspace=apps/api prisma:migrate` runs clean against the
-   `docker-compose` Postgres and creates every table in the schema.
-2. Auth is wired (signup/login, session/JWT issuance) using whichever
-   provider you picked.
-3. Workspace → Space → Folder → List CRUD exists as real NestJS endpoints,
-   permission-checked so a request from outside a Workspace's membership is
-   rejected — the PRD calls this out explicitly as the foundation everything
-   else depends on. Don't under-build the permission model to hit the date;
-   that's the one risk this milestone exists to retire.
-4. A minimal frontend flow exists to exercise it: sign in, see your
-   Workspace's Spaces and Lists (a table is fine — this is not the Week 3-4
-   List view).
+1. A minimal frontend flow: sign-in form calling `/auth/login`, a page
+   listing the signed-in user's Workspaces (`GET /workspaces`), and a
+   Workspace detail view showing its Spaces and Lists. A table is fine —
+   this is not the Week 3-4 List view, it's just proof the permission model
+   and CRUD work end-to-end from a browser, not just curl.
+2. Once that's in place, Week 1-2 is genuinely done and Week 3-4 (the
+   Task engine) starts clean.
 
 ## Conventions to keep
 
