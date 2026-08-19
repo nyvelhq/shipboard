@@ -185,6 +185,18 @@ exactly where to start.
     app with a confirmation dialog, since its blast radius (every List/
     Task/comment/attachment underneath it) is categorically different
     from every other single-row delete in the app.
+  - **Role-gated deletes** — a `Roles()` decorator + `RolesGuard`
+    (`common/`) restrict Task/Sprint/Space/Custom Field delete to
+    `owner`/`admin` `WorkspaceMember.role`. Deliberately *not* applied to
+    Acceptance Criterion delete (a trivial, single-task checklist item —
+    gating it would just add friction to normal task refinement) or to
+    Comment/Attachment delete, which already had a correct but different
+    permission model (author-only) — those got an admin-override added
+    instead (`CurrentMembership()` decorator), so admins can now also
+    moderate-delete other people's comments/attachments on top of
+    everyone's existing right to delete their own. See the "no invite
+    flow" bullet below for the real limitation on how far this reaches
+    today.
 
 **Weeks 1-2 through 11 are done — 11 of the PRD's 12 weeks.** Verified
 live in a browser, not just build checks. Most recently: set a Task's
@@ -240,6 +252,14 @@ backlog to clear mechanically:
 - **CORS is wide open** (`app.enableCors()`, no origin allowlist) — fine
   for local dev, not for a real deployment. Needs an explicit allowed-
   origins list before this goes anywhere near production.
+- **No invite/add-member flow.** `WorkspaceMember.role` is now load-
+  bearing (see below — it gates Task/Sprint/Space/Custom Field delete),
+  but there's no UI or endpoint to add a second member to a workspace at
+  all, elevated or not — every existing workspace currently has exactly
+  one member, its owner. The role restriction is real and enforced (see
+  the RBAC bullet below for how it was verified), it just has nothing to
+  bite on yet in normal use. This is the natural next thing to build if
+  the role model is going to matter in practice.
 
 ## Where this stands
 
