@@ -15,10 +15,12 @@ import { diskStorage } from 'multer';
 import { randomUUID } from 'crypto';
 import { existsSync, mkdirSync } from 'fs';
 import { join } from 'path';
+import { WorkspaceMember } from '@prisma/client';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { CurrentUser, RequestUser } from '../auth/current-user.decorator';
 import { WorkspaceMembershipGuard } from '../common/guards/workspace-membership.guard';
 import { TaskOwnershipGuard } from '../common/guards/task-ownership.guard';
+import { CurrentMembership } from '../common/decorators/current-membership.decorator';
 import { AttachmentsService } from './attachments.service';
 import { CreateLinkAttachmentDto } from './dto/create-link-attachment.dto';
 
@@ -90,7 +92,8 @@ export class AttachmentsController {
     @Param('taskId') taskId: string,
     @Param('attachmentId') attachmentId: string,
     @CurrentUser() user: RequestUser,
+    @CurrentMembership() membership: WorkspaceMember,
   ) {
-    return this.attachments.remove(workspaceId, spaceId, listId, taskId, attachmentId, user.id);
+    return this.attachments.remove(workspaceId, spaceId, listId, taskId, attachmentId, user.id, membership.role);
   }
 }

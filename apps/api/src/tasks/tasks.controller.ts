@@ -2,6 +2,9 @@ import { Body, Controller, Delete, Get, Param, Patch, Post, UseGuards } from '@n
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { CurrentUser, RequestUser } from '../auth/current-user.decorator';
 import { WorkspaceMembershipGuard } from '../common/guards/workspace-membership.guard';
+import { RolesGuard } from '../common/guards/roles.guard';
+import { Roles } from '../common/decorators/roles.decorator';
+import { ELEVATED_ROLES } from '../common/roles';
 import { TasksService } from './tasks.service';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
@@ -53,6 +56,8 @@ export class TasksController {
   }
 
   @Delete(':taskId')
+  @UseGuards(RolesGuard)
+  @Roles(...ELEVATED_ROLES)
   remove(
     @Param('workspaceId') workspaceId: string,
     @Param('spaceId') spaceId: string,

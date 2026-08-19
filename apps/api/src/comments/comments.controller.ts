@@ -1,7 +1,9 @@
 import { Body, Controller, Delete, Get, Param, Post, UseGuards } from '@nestjs/common';
+import { WorkspaceMember } from '@prisma/client';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { CurrentUser, RequestUser } from '../auth/current-user.decorator';
 import { WorkspaceMembershipGuard } from '../common/guards/workspace-membership.guard';
+import { CurrentMembership } from '../common/decorators/current-membership.decorator';
 import { CommentsService } from './comments.service';
 import { CreateCommentDto } from './dto/create-comment.dto';
 
@@ -40,7 +42,8 @@ export class CommentsController {
     @Param('taskId') taskId: string,
     @Param('commentId') commentId: string,
     @CurrentUser() user: RequestUser,
+    @CurrentMembership() membership: WorkspaceMember,
   ) {
-    return this.comments.remove(workspaceId, spaceId, listId, taskId, commentId, user.id);
+    return this.comments.remove(workspaceId, spaceId, listId, taskId, commentId, user.id, membership.role);
   }
 }

@@ -1,6 +1,9 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { WorkspaceMembershipGuard } from '../common/guards/workspace-membership.guard';
+import { RolesGuard } from '../common/guards/roles.guard';
+import { Roles } from '../common/decorators/roles.decorator';
+import { ELEVATED_ROLES } from '../common/roles';
 import { SprintsService } from './sprints.service';
 import { CreateSprintDto } from './dto/create-sprint.dto';
 import { UpdateSprintDto } from './dto/update-sprint.dto';
@@ -51,6 +54,8 @@ export class SprintsController {
   }
 
   @Delete(':sprintId')
+  @UseGuards(RolesGuard)
+  @Roles(...ELEVATED_ROLES)
   remove(
     @Param('workspaceId') workspaceId: string,
     @Param('spaceId') spaceId: string,

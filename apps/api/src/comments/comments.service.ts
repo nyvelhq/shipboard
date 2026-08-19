@@ -2,6 +2,7 @@ import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/commo
 import { PrismaService } from '../prisma/prisma.service';
 import { TasksService } from '../tasks/tasks.service';
 import { RealtimeGateway } from '../realtime/realtime.gateway';
+import { isElevatedRole } from '../common/roles';
 import { CreateCommentDto } from './dto/create-comment.dto';
 
 const COMMENT_INCLUDE = {
@@ -49,13 +50,14 @@ export class CommentsService {
     taskId: string,
     commentId: string,
     userId: string,
+    role: string,
   ) {
     await this.tasks.findOne(workspaceId, spaceId, listId, taskId);
     const comment = await this.prisma.comment.findUnique({ where: { id: commentId } });
     if (!comment || comment.taskId !== taskId) {
       throw new NotFoundException('Comment not found.');
     }
-    if (comment.userId !== userId) {
+    if (comment.userId !== userId && !isElevatedRole(role)) {
       throw new ForbiddenException('You can only delete your own comments.');
     }
     await this.prisma.comment.delete({ where: { id: commentId } });

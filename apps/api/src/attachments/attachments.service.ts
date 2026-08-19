@@ -3,6 +3,7 @@ import { Attachment, User } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { TasksService } from '../tasks/tasks.service';
 import { RealtimeGateway } from '../realtime/realtime.gateway';
+import { isElevatedRole } from '../common/roles';
 
 const ATTACHMENT_INCLUDE = {
   uploader: { select: { id: true, name: true, email: true } },
@@ -95,13 +96,14 @@ export class AttachmentsService {
     taskId: string,
     attachmentId: string,
     userId: string,
+    role: string,
   ) {
     await this.tasks.findOne(workspaceId, spaceId, listId, taskId);
     const attachment = await this.prisma.attachment.findUnique({ where: { id: attachmentId } });
     if (!attachment || attachment.taskId !== taskId) {
       throw new NotFoundException('Attachment not found.');
     }
-    if (attachment.uploadedBy !== userId) {
+    if (attachment.uploadedBy !== userId && !isElevatedRole(role)) {
       throw new ForbiddenException('You can only delete your own attachments.');
     }
     await this.prisma.attachment.delete({ where: { id: attachmentId } });
