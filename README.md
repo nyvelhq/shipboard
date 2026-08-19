@@ -10,16 +10,18 @@ plan: **[Shipboard PRD & Architecture Plan](https://claude.ai/code/artifact/7d40
 
 ## What's here
 
-Week 1-2 of the 12-week plan is done. Two npm workspaces:
+Weeks 1-4 of the 12-week plan are done. Two npm workspaces:
 
-- `apps/api` — NestJS + Prisma. Auth (signup/login), and permission-checked
-  Workspace → Space → Folder → List CRUD. The full data model from the PRD
-  is in `apps/api/prisma/schema.prisma`, migrated against Postgres.
-- `apps/web` — Next.js 14 App Router. Sign-in/sign-up, a Workspace list,
-  and a Workspace detail view (Spaces + Lists, create both inline).
+- `apps/api` — NestJS + Prisma. Auth (signup/login), permission-checked
+  Workspace → Space → Folder → List → Task CRUD (with subtasks, status
+  transitions, assignees). The full data model from the PRD is in
+  `apps/api/prisma/schema.prisma`, migrated against Postgres.
+- `apps/web` — Next.js 14 App Router. Sign-in/sign-up, a Workspace list, a
+  Workspace detail view (Spaces + Lists), and a List view with an
+  editable Task table (inline status/priority/assignee/due-date, subtasks).
 
-No Task engine, Sprints, Custom Fields, real-time layer, or Tailwind setup
-yet — that's Week 3-4 onward. See `HANDOFF.md` for the exact boundary.
+No Sprints, Custom Fields, Board/Timeline views, or real-time layer yet —
+that's Week 5-6 onward. See `HANDOFF.md` for the exact boundary.
 
 ## Quickstart
 

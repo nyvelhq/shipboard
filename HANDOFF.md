@@ -36,48 +36,69 @@ exactly where to start.
   usable immediately.
 - `apps/api` boots, connects to Postgres via Prisma, and serves
   `GET /health` → `{ status: 'ok', db: 'connected' }`.
-- **Frontend auth + hierarchy flow** — `apps/web` has a working, styled
-  (plain inline styles, no Tailwind yet — see below) flow: `/login`
+- **Frontend auth + hierarchy flow** — `apps/web`: `/login`
   (combined sign-in/sign-up), `/workspaces` (list + create), and
   `/workspaces/[id]` (Spaces and their Lists, create both inline). Session
   lives in `localStorage` via `lib/auth-context.tsx` and survives reload.
-  `lib/api.ts` is the typed client for every Week 1-2 endpoint.
+  These three pages still use plain inline styles (see the Tailwind note
+  below).
+- **Task engine** — full CRUD nested under
+  `/workspaces/:id/spaces/:id/lists/:id/tasks`, same permission pattern as
+  everything else: `WorkspaceMembershipGuard` at the door, plus
+  `ListsService.findOne` reused to verify the Task's List actually belongs
+  to the Space/Workspace in the URL. Subtasks (1 level, enforced
+  server-side), status transitions (validated against the Task's own
+  List's workflow — can't set a status from a different List), assignees
+  (validated against workspace membership), priority, due dates.
+  `GET /workspaces/:id/members` backs the assignee picker.
+- **List view** — `/workspaces/[id]/spaces/[id]/lists/[id]`: a real Task
+  table, Tailwind-styled. Inline-editable name, status/priority/assignee
+  dropdowns (each change PATCHes immediately, no save button), due date,
+  delete, expandable subtasks with their own add-subtask form. This is the
+  only page using Tailwind so far — see below.
+- `lib/api.ts` is the typed client for every endpoint through Week 3-4.
 - `docker-compose.yml` for local Postgres + Redis, CI that installs,
   generates the Prisma client, and builds both workspaces on every push.
 
-**Week 1-2 is done.** Verified live in a browser against the real API and
-Postgres, not just a build check: signup → create Workspace → create Space
-→ create List → reload (session persists) → sign out → sign back in with
-the same account. Zero console errors on a clean tab.
+**Week 1-2 and Week 3-4 are both done.** Verified live in a browser against
+the real API and Postgres, not just build checks — most recently: create
+Task (default status auto-picked) → expand an existing subtask (inherited
+parent's status) → change its status via dropdown → confirmed via network
+tab (`PATCH .../tasks/:id → 200`) and a reload showing it persisted.
 
 ## What does NOT exist yet — deliberately
 
-Nothing here pretends to be further along than it is. This is genuinely
-Week 3-8 territory, not started:
+Nothing here pretends to be further along than it is. Genuinely Week 5-11
+territory, not started:
 
-- **Tailwind + the component library** the PRD's architecture section
-  recommends. The Week 1-2 frontend uses plain inline styles to avoid
-  build-pipeline setup that wasn't required to hit the acceptance bar —
-  wire up Tailwind/Radix as part of Week 3-4 before the real Task views
-  make hand-written inline styles unmanageable.
-- The Task engine itself: Task CRUD, subtasks, per-List status transitions
-  from the UI, the List view (sortable/filterable/groupable table).
+- **Tailwind on the Week 1-2 pages.** Tailwind is wired up (v3 — v4 changed
+  its PostCSS integration and broke the classic `tailwind.config.ts` +
+  `@tailwind` directive setup, so it's pinned) and used on the new List
+  view, but `/login`, `/workspaces`, and `/workspaces/[id]` were left on
+  their original inline styles rather than doing an unrelated rewrite of
+  already-shipped, already-tested pages. Migrating them is a fast-follow,
+  not a blocker.
+- **Multi-assignee UI.** The schema and API already support multiple
+  assignees per Task (`assigneeIds: string[]`); the List view's assignee
+  dropdown is single-select for now. Backend change not required to fix
+  this — just the picker component.
 - Sprints, Custom Fields, Comments, Attachments modules.
-- Socket.IO / real-time layer.
+- Socket.IO / real-time layer — every Task edit right now requires a
+  manual reload to see other users' changes.
+- Board (Kanban) and Timeline (Gantt) views — List view only so far.
 - The Gantt component decision (Bryntum vs. DHTMLX vs. build) — the PRD
   flags this as a build-or-buy call that should be pinned *before* Week 11,
   not during it.
 
-## Start here — Week 3-4
+## Start here — Week 5-6
 
-Per the PRD's plan, Week 3-4 is the Task engine: Task CRUD, subtasks,
-per-List custom statuses (the workflow already exists on every List —
-this is about *using* it, moving a Task between its List's statuses),
-assignees, due dates, priority, and the List view with inline editing. The
-Week 1-2 permission pattern (`WorkspaceMembershipGuard` +
-ownership-chain checks in each service) is the template to extend down to
-Tasks — a Task's parent List must be verified to belong to the Space/
-Workspace in the URL, the same way Folders and Lists already are.
+Per the PRD's plan, Week 5-6 is Board view + real-time sync. The
+field-level-PATCH convention (see below) is already the pattern every Task
+edit uses — Socket.IO just needs to broadcast those same PATCHes to other
+clients in the same List instead of requiring a reload. The Board view
+groups the same Task data by `status.category` instead of rendering a flat
+table — no new backend endpoints should be needed, `GET .../tasks` already
+returns everything required.
 
 ## Conventions to keep
 
