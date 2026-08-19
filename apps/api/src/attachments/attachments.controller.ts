@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  Body,
   Controller,
   Delete,
   Get,
@@ -19,6 +20,7 @@ import { CurrentUser, RequestUser } from '../auth/current-user.decorator';
 import { WorkspaceMembershipGuard } from '../common/guards/workspace-membership.guard';
 import { TaskOwnershipGuard } from '../common/guards/task-ownership.guard';
 import { AttachmentsService } from './attachments.service';
+import { CreateLinkAttachmentDto } from './dto/create-link-attachment.dto';
 
 // Local disk storage — a deliberate MVP simplification, not the PRD's
 // intended production path (S3 or equivalent). See HANDOFF.md.
@@ -56,6 +58,18 @@ export class AttachmentsController {
   ) {
     if (!file) throw new BadRequestException('No file uploaded.');
     return this.attachments.create(workspaceId, spaceId, listId, taskId, user.id, file);
+  }
+
+  @Post('link')
+  createLink(
+    @Param('workspaceId') workspaceId: string,
+    @Param('spaceId') spaceId: string,
+    @Param('listId') listId: string,
+    @Param('taskId') taskId: string,
+    @CurrentUser() user: RequestUser,
+    @Body() dto: CreateLinkAttachmentDto,
+  ) {
+    return this.attachments.createLink(workspaceId, spaceId, listId, taskId, user.id, dto.url, dto.label);
   }
 
   @Get()

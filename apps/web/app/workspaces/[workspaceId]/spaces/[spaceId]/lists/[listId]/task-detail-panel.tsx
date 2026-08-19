@@ -1,7 +1,7 @@
 'use client';
 
-import { ChangeEvent, FormEvent, useEffect, useState } from 'react';
-import { X } from 'lucide-react';
+import { ChangeEvent, ClipboardEvent, FormEvent, useEffect, useState } from 'react';
+import { Link2, Paperclip, X } from 'lucide-react';
 import {
   Attachment,
   Comment,
@@ -17,6 +17,12 @@ import {
 import { useToast } from '@/components/toast/toast-context';
 
 const PRIORITIES = ['urgent', 'high', 'normal', 'low'];
+
+// Matches the backend sentinel (attachments.service.ts LINK_MIME_TYPE) —
+// a link attachment has no uploaded file, so its "url" is an external
+// address, not a path on this server, and shouldn't be prefixed with
+// API_URL when rendered.
+const LINK_MIME_TYPE = 'text/uri-list';
 
 interface Props {
   token: string;
@@ -51,6 +57,10 @@ export function TaskDetailPanel({
   const [newComment, setNewComment] = useState('');
   const [postingComment, setPostingComment] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [addingLink, setAddingLink] = useState(false);
+  const [linkUrl, setLinkUrl] = useState('');
+  const [linkLabel, setLinkLabel] = useState('');
+  const [submittingLink, setSubmittingLink] = useState(false);
   const [error, setError] = useState('');
 
   useEffect(() => {
@@ -120,9 +130,7 @@ export function TaskDetailPanel({
     }
   }
 
-  async function handleFileChange(e: ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  async function uploadFile(file: File) {
     setUploading(true);
     setError('');
     try {
@@ -135,7 +143,45 @@ export function TaskDetailPanel({
       toast.error(message);
     } finally {
       setUploading(false);
-      e.target.value = '';
+    }
+  }
+
+  async function handleFileChange(e: ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    await uploadFile(file);
+    e.target.value = '';
+  }
+
+  async function handlePaste(e: ClipboardEvent<HTMLDivElement>) {
+    const item = Array.from(e.clipboardData.items).find((i) => i.type.startsWith('image/'));
+    if (!item) return;
+    const blob = item.getAsFile();
+    if (!blob) return;
+    e.preventDefault();
+    const extension = item.type.split('/')[1] || 'png';
+    const file = new File([blob], `pasted-image-${Date.now()}.${extension}`, { type: item.type });
+    await uploadFile(file);
+  }
+
+  async function submitLink(e: FormEvent) {
+    e.preventDefault();
+    if (!linkUrl.trim()) return;
+    setSubmittingLink(true);
+    setError('');
+    try {
+      await api.createLinkAttachment(token, workspaceId, spaceId, listId, task.id, linkUrl.trim(), linkLabel.trim());
+      setLinkUrl('');
+      setLinkLabel('');
+      setAddingLink(false);
+      await load();
+      toast.success('Link attached.');
+    } catch (err) {
+      const message = err instanceof ApiError ? err.message : 'Failed to attach link.';
+      setError(message);
+      toast.error(message);
+    } finally {
+      setSubmittingLink(false);
     }
   }
 
@@ -160,6 +206,7 @@ export function TaskDetailPanel({
       <div
         className="flex max-h-[85vh] w-full max-w-4xl flex-col overflow-hidden rounded-lg bg-white shadow-2xl"
         onClick={(e) => e.stopPropagation()}
+        onPaste={handlePaste}
       >
         <div className="flex shrink-0 items-center justify-between border-b border-gray-100 px-6 py-3">
           <input
@@ -215,34 +262,91 @@ export function TaskDetailPanel({
                 Attachments {attachments.length > 0 && `(${attachments.length})`}
               </h3>
               <div className="flex flex-col gap-2">
-                {attachments.map((att) => (
-                  <div
-                    key={att.id}
-                    className="flex items-center justify-between rounded border border-gray-200 px-3 py-2 text-sm"
-                  >
-                    <a
-                      href={`${API_URL}${att.url}`}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="truncate text-teal-700 hover:underline"
+                {attachments.map((att) => {
+                  const isLink = att.mimeType === LINK_MIME_TYPE;
+                  return (
+                    <div
+                      key={att.id}
+                      className="flex items-center justify-between rounded border border-gray-200 px-3 py-2 text-sm"
                     >
-                      {att.filename}
-                    </a>
+                      <a
+                        href={isLink ? att.url : `${API_URL}${att.url}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="flex min-w-0 items-center gap-1.5 truncate text-teal-700 hover:underline"
+                      >
+                        {isLink ? (
+                          <Link2 size={13} className="shrink-0" />
+                        ) : (
+                          <Paperclip size={13} className="shrink-0" />
+                        )}
+                        <span className="truncate">{att.filename}</span>
+                      </a>
+                      <button
+                        type="button"
+                        onClick={() => removeAttachment(att.id)}
+                        className="ml-2 shrink-0 text-gray-300 hover:text-red-600"
+                        aria-label="Remove attachment"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {addingLink ? (
+                <form onSubmit={submitLink} className="mt-2 flex flex-col gap-1.5">
+                  <input
+                    value={linkUrl}
+                    onChange={(e) => setLinkUrl(e.target.value)}
+                    placeholder="https://…"
+                    autoFocus
+                    className="rounded-md border border-gray-200 px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-teal-600"
+                  />
+                  <input
+                    value={linkLabel}
+                    onChange={(e) => setLinkLabel(e.target.value)}
+                    placeholder="Label (optional)"
+                    className="rounded-md border border-gray-200 px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-teal-600"
+                  />
+                  <div className="flex gap-3">
+                    <button
+                      type="submit"
+                      disabled={submittingLink}
+                      className="text-sm font-medium text-teal-700 hover:underline"
+                    >
+                      {submittingLink ? 'Adding…' : 'Add link'}
+                    </button>
                     <button
                       type="button"
-                      onClick={() => removeAttachment(att.id)}
-                      className="ml-2 shrink-0 text-gray-300 hover:text-red-600"
-                      aria-label="Remove attachment"
+                      onClick={() => {
+                        setAddingLink(false);
+                        setLinkUrl('');
+                        setLinkLabel('');
+                      }}
+                      className="text-sm text-gray-400 hover:text-gray-600"
                     >
-                      ✕
+                      Cancel
                     </button>
                   </div>
-                ))}
-              </div>
-              <label className="mt-2 inline-block cursor-pointer text-sm font-medium text-teal-700 hover:underline">
-                {uploading ? 'Uploading…' : '+ Add attachment'}
-                <input type="file" className="hidden" onChange={handleFileChange} disabled={uploading} />
-              </label>
+                </form>
+              ) : (
+                <div className="mt-2 flex items-center gap-4">
+                  <label className="inline-block cursor-pointer text-sm font-medium text-teal-700 hover:underline">
+                    {uploading ? 'Uploading…' : '+ Add attachment'}
+                    <input type="file" className="hidden" onChange={handleFileChange} disabled={uploading} />
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => setAddingLink(true)}
+                    className="text-sm font-medium text-teal-700 hover:underline"
+                  >
+                    + Add link
+                  </button>
+                </div>
+              )}
+              <p className="mt-1.5 text-xs text-gray-400">Tip: paste a screenshot directly into this panel.</p>
             </section>
 
             <section>

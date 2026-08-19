@@ -315,6 +315,20 @@ export const api = {
     if (!res.ok) throw new ApiError(responseBody.message || 'Upload failed.');
     return responseBody as Attachment;
   },
+  createLinkAttachment: (
+    token: string,
+    workspaceId: string,
+    spaceId: string,
+    listId: string,
+    taskId: string,
+    url: string,
+    label?: string,
+  ) =>
+    request<Attachment>(
+      `/workspaces/${workspaceId}/spaces/${spaceId}/lists/${listId}/tasks/${taskId}/attachments/link`,
+      { method: 'POST', body: JSON.stringify({ url, label }) },
+      token,
+    ),
   deleteAttachment: (
     token: string,
     workspaceId: string,

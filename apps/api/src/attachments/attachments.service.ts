@@ -8,6 +8,11 @@ const ATTACHMENT_INCLUDE = {
   uploader: { select: { id: true, name: true, email: true } },
 } as const;
 
+// A link attachment has no uploaded file — this sentinel mimeType (a real
+// IANA type for "a URI, not a payload") lets the frontend tell it apart
+// from an uploaded file without a schema migration for a boolean flag.
+export const LINK_MIME_TYPE = 'text/uri-list';
+
 type AttachmentWithUploader = Attachment & { uploader: Pick<User, 'id' | 'name' | 'email'> };
 
 // Attachment.sizeBytes is a Prisma BigInt, which JSON.stringify can't
@@ -41,6 +46,31 @@ export class AttachmentsService {
         filename: file.originalname,
         sizeBytes: BigInt(file.size),
         mimeType: file.mimetype,
+      },
+      include: ATTACHMENT_INCLUDE,
+    });
+    this.realtime.emitListChanged(listId);
+    return serialize(attachment);
+  }
+
+  async createLink(
+    workspaceId: string,
+    spaceId: string,
+    listId: string,
+    taskId: string,
+    userId: string,
+    url: string,
+    label?: string,
+  ) {
+    await this.tasks.findOne(workspaceId, spaceId, listId, taskId);
+    const attachment = await this.prisma.attachment.create({
+      data: {
+        taskId,
+        uploadedBy: userId,
+        url,
+        filename: label?.trim() || url,
+        sizeBytes: BigInt(0),
+        mimeType: LINK_MIME_TYPE,
       },
       include: ATTACHMENT_INCLUDE,
     });
