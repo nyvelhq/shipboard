@@ -3,6 +3,7 @@
 import { FormEvent, useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { Trash2 } from 'lucide-react';
 import { ApiError, Sprint, api } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { useToast } from '@/components/toast/toast-context';
@@ -50,6 +51,20 @@ export default function SprintsPage() {
       setError(err instanceof ApiError ? err.message : 'Failed to load sprints.');
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function removeSprint(sprintId: string) {
+    if (!token) return;
+    setError('');
+    try {
+      await api.deleteSprint(token, workspaceId, spaceId, listId, sprintId);
+      await load(token);
+      toast.success('Sprint deleted. Its tasks were moved back to the backlog.');
+    } catch (err) {
+      const message = err instanceof ApiError ? err.message : 'Failed to delete sprint.';
+      setError(message);
+      toast.error(message);
     }
   }
 
@@ -103,10 +118,13 @@ export default function SprintsPage() {
 
       <ul className="mb-8 flex flex-col gap-2">
         {sprints.map((sprint) => (
-          <li key={sprint.id}>
+          <li
+            key={sprint.id}
+            className="group flex items-center gap-2 rounded-lg border border-gray-200 px-4 py-3 hover:bg-gray-50"
+          >
             <Link
               href={`/workspaces/${workspaceId}/spaces/${spaceId}/lists/${listId}/sprints/${sprint.id}`}
-              className="flex items-center justify-between rounded-lg border border-gray-200 px-4 py-3 hover:bg-gray-50"
+              className="flex flex-1 items-center justify-between"
             >
               <div>
                 <span className="font-medium text-gray-900">{sprint.name}</span>
@@ -122,6 +140,15 @@ export default function SprintsPage() {
                 {sprint.status}
               </span>
             </Link>
+            <button
+              type="button"
+              onClick={() => removeSprint(sprint.id)}
+              className="shrink-0 rounded p-1.5 text-gray-300 opacity-0 hover:bg-red-50 hover:text-red-600 group-hover:opacity-100"
+              aria-label={`Delete ${sprint.name}`}
+              title="Delete sprint"
+            >
+              <Trash2 size={15} />
+            </button>
           </li>
         ))}
       </ul>

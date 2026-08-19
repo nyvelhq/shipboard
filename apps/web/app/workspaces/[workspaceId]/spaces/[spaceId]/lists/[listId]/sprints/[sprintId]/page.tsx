@@ -98,6 +98,20 @@ export default function SprintDetailPage() {
     }
   }
 
+  async function removeSprint() {
+    if (!token) return;
+    setError('');
+    try {
+      await api.deleteSprint(token, workspaceId, spaceId, listId, sprintId);
+      toast.success('Sprint deleted. Its tasks were moved back to the backlog.');
+      router.push(`/workspaces/${workspaceId}/spaces/${spaceId}/lists/${listId}/sprints`);
+    } catch (err) {
+      const message = err instanceof ApiError ? err.message : 'Failed to delete sprint.';
+      setError(message);
+      toast.error(message);
+    }
+  }
+
   if (!ready || !token) return null;
 
   const sprintTasks = sprint?.tasks ?? [];
@@ -161,6 +175,13 @@ export default function SprintDetailPage() {
             <span className="text-sm text-gray-500">
               Velocity: <span className="font-semibold text-gray-800">{donePoints}</span> / {totalPoints} points done
             </span>
+            <button
+              type="button"
+              onClick={removeSprint}
+              className="ml-auto text-sm font-medium text-gray-400 hover:text-red-600"
+            >
+              Delete sprint
+            </button>
           </div>
 
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
