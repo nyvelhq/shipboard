@@ -3,9 +3,11 @@
 import { FormEvent, useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { api, ApiError, ListItem, Member, Task, TaskInput } from '@/lib/api';
+import { ApiError, TaskInput, api } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
+import { useListTasks } from '@/lib/use-list-tasks';
 import { TaskRow } from './task-row';
+import { ViewToggle } from './view-toggle';
 
 export default function ListDetailPage() {
   const { token, ready } = useAuth();
@@ -13,11 +15,13 @@ export default function ListDetailPage() {
   const params = useParams<{ workspaceId: string; spaceId: string; listId: string }>();
   const { workspaceId, spaceId, listId } = params;
 
-  const [list, setList] = useState<ListItem | null>(null);
-  const [tasks, setTasks] = useState<Task[]>([]);
-  const [members, setMembers] = useState<Member[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const { list, tasks, members, loading, error, setError, reload } = useListTasks(
+    token,
+    workspaceId,
+    spaceId,
+    listId,
+  );
+
   const [newTaskName, setNewTaskName] = useState('');
   const [creating, setCreating] = useState(false);
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
@@ -25,32 +29,8 @@ export default function ListDetailPage() {
 
   useEffect(() => {
     if (!ready) return;
-    if (!token) {
-      router.replace('/login');
-      return;
-    }
-    load(token);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ready, token, listId]);
-
-  async function load(currentToken: string) {
-    setLoading(true);
-    setError('');
-    try {
-      const [listData, taskData, memberData] = await Promise.all([
-        api.getList(currentToken, workspaceId, spaceId, listId),
-        api.listTasks(currentToken, workspaceId, spaceId, listId),
-        api.listMembers(currentToken, workspaceId),
-      ]);
-      setList(listData);
-      setTasks(taskData);
-      setMembers(memberData);
-    } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Failed to load list.');
-    } finally {
-      setLoading(false);
-    }
-  }
+    if (!token) router.replace('/login');
+  }, [ready, token, router]);
 
   async function createTask(e: FormEvent) {
     e.preventDefault();
@@ -60,7 +40,7 @@ export default function ListDetailPage() {
     try {
       await api.createTask(token, workspaceId, spaceId, listId, { name: newTaskName.trim() });
       setNewTaskName('');
-      await load(token);
+      await reload();
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Failed to create task.');
     } finally {
@@ -73,7 +53,7 @@ export default function ListDetailPage() {
     setError('');
     try {
       await api.updateTask(token, workspaceId, spaceId, listId, taskId, input);
-      await load(token);
+      await reload();
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Failed to update task.');
     }
@@ -84,7 +64,7 @@ export default function ListDetailPage() {
     setError('');
     try {
       await api.deleteTask(token, workspaceId, spaceId, listId, taskId);
-      await load(token);
+      await reload();
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Failed to delete task.');
     }
@@ -98,7 +78,7 @@ export default function ListDetailPage() {
       await api.createSubtask(token, workspaceId, spaceId, listId, parentId, { name });
       setSubtaskDraft((prev) => ({ ...prev, [parentId]: '' }));
       setExpanded((prev) => ({ ...prev, [parentId]: true }));
-      await load(token);
+      await reload();
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Failed to add subtask.');
     }
@@ -111,7 +91,10 @@ export default function ListDetailPage() {
       <Link href={`/workspaces/${workspaceId}`} className="text-sm text-teal-700 hover:underline">
         &larr; Back to workspace
       </Link>
-      <h1 className="mb-6 mt-2">{loading ? 'Loading…' : list?.name}</h1>
+      <div className="mb-6 mt-2 flex items-center justify-between">
+        <h1>{loading ? 'Loading…' : list?.name}</h1>
+        <ViewToggle workspaceId={workspaceId} spaceId={spaceId} listId={listId} active="list" />
+      </div>
 
       {error && <p className="mb-4 text-red-600">{error}</p>}
 

@@ -1,6 +1,7 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { ListsService } from '../lists/lists.service';
+import { RealtimeGateway } from '../realtime/realtime.gateway';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
 
@@ -14,6 +15,7 @@ export class TasksService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly lists: ListsService,
+    private readonly realtime: RealtimeGateway,
   ) {}
 
   async create(workspaceId: string, spaceId: string, listId: string, userId: string, dto: CreateTaskDto) {
@@ -25,7 +27,7 @@ export class TasksService {
 
     const position = await this.prisma.task.count({ where: { listId, parentTaskId: null } });
 
-    return this.prisma.task.create({
+    const task = await this.prisma.task.create({
       data: {
         listId,
         statusId,
@@ -42,6 +44,8 @@ export class TasksService {
       },
       include: TASK_INCLUDE,
     });
+    this.realtime.emitListChanged(listId);
+    return task;
   }
 
   async createSubtask(
@@ -63,7 +67,7 @@ export class TasksService {
 
     const position = await this.prisma.task.count({ where: { parentTaskId } });
 
-    return this.prisma.task.create({
+    const subtask = await this.prisma.task.create({
       data: {
         listId,
         parentTaskId,
@@ -81,6 +85,8 @@ export class TasksService {
       },
       include: TASK_INCLUDE,
     });
+    this.realtime.emitListChanged(listId);
+    return subtask;
   }
 
   async findAll(workspaceId: string, spaceId: string, listId: string) {
@@ -112,7 +118,7 @@ export class TasksService {
     if (dto.statusId) await this.assertStatusBelongsToList(dto.statusId, listId);
     if (dto.assigneeIds) await this.assertAssigneesAreMembers(workspaceId, dto.assigneeIds);
 
-    return this.prisma.$transaction(async (tx) => {
+    const updated = await this.prisma.$transaction(async (tx) => {
       if (dto.assigneeIds) {
         await tx.taskAssignee.deleteMany({ where: { taskId } });
         if (dto.assigneeIds.length) {
@@ -134,6 +140,8 @@ export class TasksService {
         include: TASK_INCLUDE,
       });
     });
+    this.realtime.emitListChanged(listId);
+    return updated;
   }
 
   async remove(workspaceId: string, spaceId: string, listId: string, taskId: string) {
@@ -145,6 +153,7 @@ export class TasksService {
       this.prisma.task.deleteMany({ where: { parentTaskId: taskId } }),
       this.prisma.task.delete({ where: { id: taskId } }),
     ]);
+    this.realtime.emitListChanged(listId);
     return { ok: true };
   }
 
