@@ -54,60 +54,84 @@ exactly where to start.
 - **List view** — `/workspaces/[id]/spaces/[id]/lists/[id]`: a real Task
   table, Tailwind-styled. Inline-editable name, status/priority/assignee
   dropdowns (each change PATCHes immediately, no save button), due date,
-  delete, expandable subtasks with their own add-subtask form. This is the
-  only page using Tailwind so far — see below.
-- `lib/api.ts` is the typed client for every endpoint through Week 3-4.
+  delete, expandable subtasks with their own add-subtask form.
+- **Real-time sync** — `RealtimeGateway` (Socket.IO): one room per List
+  (`list:<id>`), JWT verified on handshake, membership re-checked before a
+  client can join a room. Every Task mutation broadcasts `list:changed` to
+  that room; `lib/use-list-tasks.ts` (shared by List and Board views)
+  reloads over REST when it receives one. This is an invalidate-and-refetch
+  signal, not a diff/patch payload — every subscriber always re-fetches
+  the List's true current state rather than merging a partial payload
+  client-side, which is simpler to reason about and correct by
+  construction. A deliberate scope choice, not a shortcut hiding a gap.
+- **Board (Kanban) view** — `/workspaces/[id]/spaces/[id]/lists/[id]/board`:
+  columns grouped by the List's own status workflow, cards show priority +
+  assignee initial + due date, drag-and-drop between columns PATCHes the
+  Task's `statusId`. A List/Board toggle sits in both views' headers.
+- `lib/api.ts` is the typed client for every endpoint through Week 5-6.
 - `docker-compose.yml` for local Postgres + Redis, CI that installs,
   generates the Prisma client, and builds both workspaces on every push.
 
-**Week 1-2 and Week 3-4 are both done.** Verified live in a browser against
-the real API and Postgres, not just build checks — most recently: create
-Task (default status auto-picked) → expand an existing subtask (inherited
-parent's status) → change its status via dropdown → confirmed via network
-tab (`PATCH .../tasks/:id → 200`) and a reload showing it persisted.
+**Weeks 1-2 through 5-6 are done.** Verified live in a browser, not just
+build checks — most recently: two tabs open on the same List simultaneously
+(one List view, one Board view), a Task created via a disconnected third
+client (curl, standing in for another user) appeared in both tabs' UI with
+zero manual reload, and a status-changing PATCH (the same call the Board's
+drop handler makes) moved the card between Board columns live via the same
+socket broadcast.
+
+**One unverified piece, disclosed rather than glossed over:** the literal
+HTML5 drag *gesture* on the Board couldn't be confirmed through this
+session's browser-automation tooling — a raw `addEventListener` check
+proved a dispatched `DragEvent` reaches the DOM, but it doesn't trigger
+React's synthetic `onDrop`. This is a documented limitation of simulating
+native HTML5 DnD programmatically (shared by Playwright/Selenium/CDP-based
+tools generally), not evidence of an app bug — the handler code is the
+standard React DnD pattern and calls the exact `updateTask` path already
+proven correct two other ways (the List view's status dropdown, and direct
+API calls). Still, actually dragging a card in a real browser is worth
+doing once before calling Week 5-6 fully closed.
 
 ## What does NOT exist yet — deliberately
 
-Nothing here pretends to be further along than it is. Genuinely Week 5-11
+Nothing here pretends to be further along than it is. Genuinely Week 7-11
 territory, not started:
 
-- **Tailwind on the Week 1-2 pages.** Tailwind is wired up (v3 — v4 changed
-  its PostCSS integration and broke the classic `tailwind.config.ts` +
-  `@tailwind` directive setup, so it's pinned) and used on the new List
-  view, but `/login`, `/workspaces`, and `/workspaces/[id]` were left on
-  their original inline styles rather than doing an unrelated rewrite of
-  already-shipped, already-tested pages. Migrating them is a fast-follow,
-  not a blocker.
+- **Tailwind on the Week 1-2 pages.** `/login`, `/workspaces`, and
+  `/workspaces/[id]` still use their original inline styles — Tailwind (v3;
+  v4 changed its PostCSS integration and broke the classic
+  `tailwind.config.ts` + `@tailwind`-directive setup, so it's pinned) is
+  only on the List and Board views so far. Migrating the rest is a
+  fast-follow, not a blocker.
 - **Multi-assignee UI.** The schema and API already support multiple
-  assignees per Task (`assigneeIds: string[]`); the List view's assignee
-  dropdown is single-select for now. Backend change not required to fix
-  this — just the picker component.
+  assignees per Task (`assigneeIds: string[]`); both the List view and
+  Board view treat it as single-select for now.
 - Sprints, Custom Fields, Comments, Attachments modules.
-- Socket.IO / real-time layer — every Task edit right now requires a
-  manual reload to see other users' changes.
-- Board (Kanban) and Timeline (Gantt) views — List view only so far.
+- Timeline (Gantt) view.
 - The Gantt component decision (Bryntum vs. DHTMLX vs. build) — the PRD
   flags this as a build-or-buy call that should be pinned *before* Week 11,
   not during it.
 
-## Start here — Week 5-6
+## Start here — Week 7-8
 
-Per the PRD's plan, Week 5-6 is Board view + real-time sync. The
-field-level-PATCH convention (see below) is already the pattern every Task
-edit uses — Socket.IO just needs to broadcast those same PATCHes to other
-clients in the same List instead of requiring a reload. The Board view
-groups the same Task data by `status.category` instead of rendering a flat
-table — no new backend endpoints should be needed, `GET .../tasks` already
-returns everything required.
+Per the PRD's plan, Week 7-8 is Custom Fields + collaboration (Comments,
+Attachments). The custom-field engine is schema-ready
+(`custom_fields`/`custom_field_values`, generic `jsonb` values — see
+Conventions below) but has no NestJS module yet; follow the same pattern as
+every other resource (`WorkspaceMembershipGuard` + an ownership-chain
+check, this time verifying a `CustomField`'s `workspaceId`/`spaceId`/
+`listId` scope matches the URL). Comments and Attachments nest under a
+Task the same way Tasks nest under a List.
 
 ## Conventions to keep
 
 - REST, OpenAPI-documented, not GraphQL — see the PRD's architecture
   section for why (revisit only if you hit a concrete wall the PRD didn't
   anticipate, and say so in a commit message or PR description when you do).
-- Field-level PATCHes, not whole-resource overwrites, once you reach
-  real-time sync in Week 5-6 — this is what makes the conflict-handling
-  approach in the PRD work.
+- Field-level PATCHes, not whole-resource overwrites — every Task update
+  already follows this (see `UpdateTaskDto` — every field optional). Keep
+  it that way as Custom Fields, Comments, and Attachments land; it's what
+  makes the conflict-handling approach in the PRD work.
 - The custom-field engine stores values as generic `jsonb` in
   `custom_field_values` — don't add dedicated columns per e-commerce metric
   (SKU, vendor, etc.); that defeats the point of the design.
