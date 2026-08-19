@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { AuthProvider } from '../lib/auth-context';
 
 export const metadata: Metadata = {
   title: 'Shipboard',
@@ -16,7 +17,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           color: '#111111',
         }}
       >
-        {children}
+        <AuthProvider>{children}</AuthProvider>
       </body>
     </html>
   );
