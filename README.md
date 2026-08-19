@@ -10,7 +10,7 @@ plan: **[Shipboard PRD & Architecture Plan](https://claude.ai/code/artifact/7d40
 
 ## What's here
 
-Weeks 1-10 of the 12-week plan are done. Two npm workspaces:
+Weeks 1-11 of the 12-week plan are done. Two npm workspaces:
 
 - `apps/api` — NestJS + Prisma. Auth (signup/login), permission-checked
   Workspace → Space → Folder → List → Task CRUD (with subtasks, status
@@ -22,12 +22,13 @@ Weeks 1-10 of the 12-week plan are done. Two npm workspaces:
 - `apps/web` — Next.js 14 App Router. Sign-in/sign-up, a Workspace list, a
   Workspace detail view, a List view with an editable Task table, a Board
   (Kanban) view with drag-and-drop, a Task detail panel (description,
-  custom fields, attachments, comments), and Sprint planning (backlog ↔
-  sprint assignment, velocity tracking) — List/Board/detail/Sprints all
-  update live across open tabs without a reload.
+  custom fields, attachments, comments), Sprint planning (backlog ↔
+  sprint assignment, velocity tracking), and a hand-built Timeline
+  (Gantt) view — List/Board/detail/Sprints/Timeline all update live
+  across open tabs without a reload.
 
-No Timeline (Gantt) view yet — that's Week 11 onward. See `HANDOFF.md`
-for the exact boundary.
+Only Week 12 (hardening) is left — see `HANDOFF.md` for the priority
+order on what to close out first.
 
 ## Quickstart
 

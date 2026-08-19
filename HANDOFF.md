@@ -104,17 +104,44 @@ exactly where to start.
   `Task.storyPoints` — present in the schema since Week 1-2, unused until
   now — flow through the same `UpdateTaskDto` every other Task field uses;
   `sprintId: null` explicitly clears a Task's Sprint (back to backlog).
-- `lib/api.ts` is the typed client for every endpoint through Week 9-10.
+- **Timeline (Gantt) view** — `/workspaces/[id]/spaces/[id]/lists/[id]/timeline`:
+  hand-built, not Bryntum or DHTMLX — see the build-vs-buy note below.
+  Day-scale horizontal grid (plain `Date` arithmetic, no date-library
+  dependency), one row per top-level Task, bars positioned/sized from
+  `startDate`/`dueDate` and colored by the Task's current status. Today's
+  column and weekends are shaded. Tasks with no dates list separately
+  below the grid rather than rendering a fake zero-width bar. Clicking a
+  bar or an undated Task opens the same Task detail panel every other
+  view uses. Needed zero backend changes — reads the same
+  `GET .../tasks` response every other view already does. Closed a real
+  gap in passing: there was no UI anywhere to set a Task's *start* date
+  before this (only `dueDate`, on the List row) — added both to the
+  detail panel, since the Gantt would have had nothing to render
+  otherwise.
+- `lib/api.ts` is the typed client for every endpoint through Week 11.
 - `docker-compose.yml` for local Postgres + Redis, CI that installs,
   generates the Prisma client, and builds both workspaces on every push.
 
-**Weeks 1-2 through 9-10 are done.** Verified live in a browser, not just
-build checks. Most recently: created a Sprint, added a backlog Task to it
-through the actual UI (confirmed it left the Backlog column and appeared
-In this Sprint), set its story points, then changed the Task's status to
-Done from the List view and confirmed velocity recalculated correctly
-(0/5 → 5/5) after navigating back — proving the Sprint page and List page
-read the same underlying Task rows, not a stale copy.
+**Weeks 1-2 through 11 are done — 11 of the PRD's 12 weeks.** Verified
+live in a browser, not just build checks. Most recently: set a Task's
+start/due dates through the new detail-panel fields (confirmed via two
+`PATCH .../tasks/:id → 200` calls), watched it move from the "no dates
+set" list into the dated grid with a correctly positioned/sized bar in
+its current status's color, and confirmed clicking the bar reopens the
+same detail panel pre-populated with the dates just set.
+
+**Build-vs-buy call made for the Timeline view (Week 11):** the PRD
+flagged Bryntum vs. DHTMLX vs. hand-built as a decision to make
+deliberately, not default into. Bryntum needs a paid commercial license —
+unusable here without credentials (same situation as the Clerk/Auth0
+deviation in Week 1-2). DHTMLX's free tier installs fine, but it's a large
+third-party library with its own theming system, cutting against how
+every other view in this app is built (plain React + Tailwind, fully
+owned, no license questions for whoever inherits this repo). Went
+hand-built. `TaskDependency` (schema-ready — `blockingTaskId`/
+`blockedTaskId` — unused) is NOT wired up: dependency arrows are a real
+feature, not a quick add, and are honestly still missing from the
+Timeline view. See below.
 
 **One unverified piece from Week 5-6, still open:** the literal HTML5 drag
 *gesture* on the Board couldn't be confirmed through this session's
@@ -128,42 +155,42 @@ card once.
 
 ## What does NOT exist yet — deliberately
 
-Nothing here pretends to be further along than it is. Genuinely Week 9-11
+Nothing here pretends to be further along than it is. Genuinely Week 12
 territory, not started:
 
 - **Tailwind on the Week 1-2 pages.** `/login`, `/workspaces`, and
   `/workspaces/[id]` still use their original inline styles — Tailwind (v3;
   v4 changed its PostCSS integration and broke the classic
   `tailwind.config.ts` + `@tailwind`-directive setup, so it's pinned) is
-  only on the List, Board, and Task-detail surfaces so far. Migrating the
-  rest is a fast-follow, not a blocker.
+  only on the List, Board, Sprints, and Timeline surfaces so far.
+  Migrating the rest is a fast-follow, not a blocker.
 - **Multi-assignee UI.** The schema and API already support multiple
-  assignees per Task (`assigneeIds: string[]`); the List view, Board view,
-  and detail panel all treat it as single-select for now.
-- **Custom fields on the Board view.** The Board's cards show priority/
-  assignee/due-date but not custom field values yet — `useListTasks`
-  already fetches the applicable fields, so this is a Board-card
-  rendering gap, not a data gap.
+  assignees per Task (`assigneeIds: string[]`); every view treats it as
+  single-select for now.
+- **Custom fields and Sprint context on the Board view.** The Board's
+  cards show priority/assignee/due-date but not custom field values, and
+  the Board isn't Sprint-aware (no filter/grouping by Sprint) — both are
+  rendering gaps, not data gaps; the underlying data is already fetched.
 - **S3 (or equivalent) for Attachments.** Currently local disk — fine for
-  a single dev machine, not for a deployed multi-instance app. See the
-  note above.
-- **Sprint assignment on the Board view.** The Board doesn't show or
-  filter by Sprint yet — it's still List-wide only.
-- Timeline (Gantt) view.
-- The Gantt component decision (Bryntum vs. DHTMLX vs. build) — the PRD
-  flags this as a build-or-buy call that should be pinned *before* Week 11,
-  not during it.
+  a single dev machine, not for a deployed multi-instance app.
+- **Task dependencies.** `TaskDependency` is schema-ready
+  (`blockingTaskId`/`blockedTaskId`) but has no endpoints and no UI — the
+  Timeline view doesn't draw dependency arrows. A real feature, not a
+  quick add; genuinely out of scope for what got built here.
 
-## Start here — Week 11
+## Start here — Week 12
 
-Per the PRD's plan, Week 11 is the Timeline (Gantt) view — the one item
-in this whole plan with a real build-or-buy decision attached (Bryntum vs.
-DHTMLX vs. hand-built), and the PRD is explicit that decision should be
-made *before* the week starts, not mid-build. Read the PRD's architecture
-section on this before writing any Gantt code. Whichever direction is
-chosen, `Task.startDate`/`Task.dueDate` and `TaskDependency` (schema-ready,
-unused so far — `blockingTaskId`/`blockedTaskId`) are what a Gantt view
-needs beyond what already exists; no new Task fields should be required.
+Per the PRD's plan, Week 12 is hardening: this is the last week before
+"MVP done," and the PRD's own framing is that it's about closing gaps
+above, not adding new features. In priority order, given what's actually
+missing right now: (1) the two verification gaps noted above — a human
+confirming the Board's drag-and-drop gesture in a real browser, since it
+was never fully verified through automation, and (2) the Tailwind
+migration on the four remaining pages, since visual inconsistency is the
+most user-visible unfinished edge in the app right now. Everything else
+in "what does NOT exist yet" is a legitimate scope decision, not a defect
+— triage against real user feedback before building further, rather than
+treating this list as a backlog to clear mechanically.
 
 ## Conventions to keep
 
