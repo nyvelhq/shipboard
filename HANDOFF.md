@@ -68,60 +68,90 @@ exactly where to start.
   columns grouped by the List's own status workflow, cards show priority +
   assignee initial + due date, drag-and-drop between columns PATCHes the
   Task's `statusId`. A List/Board toggle sits in both views' headers.
-- `lib/api.ts` is the typed client for every endpoint through Week 5-6.
+- **Custom Fields** — workspace-scoped field definitions (text, number,
+  currency, dropdown, multiselect, date, checkbox, person), optionally
+  narrowed to one Space or one List. `GET .../lists/:id/custom-fields`
+  resolves which definitions actually apply to a given List. Values live
+  on `UpdateTaskDto.customFieldValues` (a `fieldId -> value` map) rather
+  than their own endpoints — every Task field, custom or not, goes through
+  the same PATCH. A "Manage custom fields" panel on the List view creates/
+  deletes List-scoped fields inline.
+- **Comments and Attachments** — both nested under a Task, both
+  author-only delete, both broadcasting through `RealtimeGateway` so they
+  update live the same way Task edits do. Attachments use **local disk
+  storage** (`apps/api/uploads/`, served via `useStaticAssets`) — a
+  deliberate MVP simplification against the PRD's implied S3-class
+  production path, not a redesign; swapping the storage backend later
+  only touches `AttachmentsService`/`AttachmentsController`, not the
+  schema or the rest of the app. A `TaskOwnershipGuard`
+  (`common/guards/task-ownership.guard.ts`) runs before the upload
+  interceptor specifically because multer writes to disk *before* a
+  handler's own checks would catch a bad `taskId` — verified: a
+  mismatched ID 404s and leaves zero files on disk.
+- **Task detail panel** — a slide-over (opened via a small button on each
+  List-view row) showing description, custom fields, attachments, and
+  comments for one Task. This is the surface Week 7-8's collaboration
+  features actually needed; nothing like it existed before.
+- `lib/api.ts` is the typed client for every endpoint through Week 7-8.
 - `docker-compose.yml` for local Postgres + Redis, CI that installs,
   generates the Prisma client, and builds both workspaces on every push.
 
-**Weeks 1-2 through 5-6 are done.** Verified live in a browser, not just
-build checks — most recently: two tabs open on the same List simultaneously
-(one List view, one Board view), a Task created via a disconnected third
-client (curl, standing in for another user) appeared in both tabs' UI with
-zero manual reload, and a status-changing PATCH (the same call the Board's
-drop handler makes) moved the card between Board columns live via the same
-socket broadcast.
+**Weeks 1-2 through 7-8 are done.** Verified live in a browser, not just
+build checks. Most recently: created a dropdown custom field and set both
+it and a pre-existing text field's value on a Task through the actual UI,
+confirmed both persisted via a direct API read; uploaded a file and posted
+a comment through the detail panel, both appeared correctly; confirmed the
+ownership guard rejects a mismatched-taskId upload before any disk write.
+Also re-confirmed real-time sync survived these changes — a Task created
+via a disconnected curl client still appeared in an open tab with zero
+manual reload.
 
-**One unverified piece, disclosed rather than glossed over:** the literal
-HTML5 drag *gesture* on the Board couldn't be confirmed through this
-session's browser-automation tooling — a raw `addEventListener` check
-proved a dispatched `DragEvent` reaches the DOM, but it doesn't trigger
-React's synthetic `onDrop`. This is a documented limitation of simulating
-native HTML5 DnD programmatically (shared by Playwright/Selenium/CDP-based
-tools generally), not evidence of an app bug — the handler code is the
-standard React DnD pattern and calls the exact `updateTask` path already
-proven correct two other ways (the List view's status dropdown, and direct
-API calls). Still, actually dragging a card in a real browser is worth
-doing once before calling Week 5-6 fully closed.
+**One unverified piece from Week 5-6, still open:** the literal HTML5 drag
+*gesture* on the Board couldn't be confirmed through this session's
+browser-automation tooling — a raw `addEventListener` check proved a
+dispatched `DragEvent` reaches the DOM, but it doesn't trigger React's
+synthetic `onDrop`. Documented limitation of simulating native HTML5 DnD
+programmatically (Playwright/Selenium/CDP-based tools generally), not
+evidence of an app bug — the handler calls the exact `updateTask` path
+already proven correct two other ways. Worth a human actually dragging a
+card once.
 
 ## What does NOT exist yet — deliberately
 
-Nothing here pretends to be further along than it is. Genuinely Week 7-11
+Nothing here pretends to be further along than it is. Genuinely Week 9-11
 territory, not started:
 
 - **Tailwind on the Week 1-2 pages.** `/login`, `/workspaces`, and
   `/workspaces/[id]` still use their original inline styles — Tailwind (v3;
   v4 changed its PostCSS integration and broke the classic
   `tailwind.config.ts` + `@tailwind`-directive setup, so it's pinned) is
-  only on the List and Board views so far. Migrating the rest is a
-  fast-follow, not a blocker.
+  only on the List, Board, and Task-detail surfaces so far. Migrating the
+  rest is a fast-follow, not a blocker.
 - **Multi-assignee UI.** The schema and API already support multiple
-  assignees per Task (`assigneeIds: string[]`); both the List view and
-  Board view treat it as single-select for now.
-- Sprints, Custom Fields, Comments, Attachments modules.
-- Timeline (Gantt) view.
+  assignees per Task (`assigneeIds: string[]`); the List view, Board view,
+  and detail panel all treat it as single-select for now.
+- **Custom fields on the Board view.** The Board's cards show priority/
+  assignee/due-date but not custom field values yet — `useListTasks`
+  already fetches the applicable fields, so this is a Board-card
+  rendering gap, not a data gap.
+- **S3 (or equivalent) for Attachments.** Currently local disk — fine for
+  a single dev machine, not for a deployed multi-instance app. See the
+  note above.
+- Sprints, Timeline (Gantt) view.
 - The Gantt component decision (Bryntum vs. DHTMLX vs. build) — the PRD
   flags this as a build-or-buy call that should be pinned *before* Week 11,
   not during it.
 
-## Start here — Week 7-8
+## Start here — Week 9-10
 
-Per the PRD's plan, Week 7-8 is Custom Fields + collaboration (Comments,
-Attachments). The custom-field engine is schema-ready
-(`custom_fields`/`custom_field_values`, generic `jsonb` values — see
-Conventions below) but has no NestJS module yet; follow the same pattern as
-every other resource (`WorkspaceMembershipGuard` + an ownership-chain
-check, this time verifying a `CustomField`'s `workspaceId`/`spaceId`/
-`listId` scope matches the URL). Comments and Attachments nest under a
-Task the same way Tasks nest under a List.
+Per the PRD's plan, Week 9-10 is Sprints + Agile/Scrum tooling: Sprint
+CRUD nested under a List (the `Sprint` model already exists — `startDate`/
+`endDate`/`goal`/`status`), assigning Tasks to a Sprint (`Task.sprintId`,
+already on the schema, unused so far), and velocity tracking off
+`Task.storyPoints` (also already on the schema, unused). Follow the same
+ownership-chain pattern as everything else: a Sprint's `listId` must
+resolve back to the Space/Workspace in the URL, the same way Tasks already
+do via `ListsService.findOne`.
 
 ## Conventions to keep
 
