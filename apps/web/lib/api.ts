@@ -199,6 +199,8 @@ export const api = {
       { method: 'POST', body: JSON.stringify({ name }) },
       token,
     ),
+  deleteSpace: (token: string, workspaceId: string, spaceId: string) =>
+    request<{ ok: true }>(`/workspaces/${workspaceId}/spaces/${spaceId}`, { method: 'DELETE' }, token),
   listLists: (token: string, workspaceId: string, spaceId: string) =>
     request<ListItem[]>(`/workspaces/${workspaceId}/spaces/${spaceId}/lists`, {}, token),
   createList: (token: string, workspaceId: string, spaceId: string, name: string) =>

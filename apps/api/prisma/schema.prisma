@@ -90,7 +90,7 @@ model Folder {
   name     String
   position Int
 
-  space Space  @relation(fields: [spaceId], references: [id])
+  space Space  @relation(fields: [spaceId], references: [id], onDelete: Cascade)
   lists List[]
 
   @@map("folders")
@@ -104,8 +104,8 @@ model List {
   type     String  @default("list") // 'list' | 'sprint_board'
   position Int
 
-  space        Space         @relation(fields: [spaceId], references: [id])
-  folder       Folder?       @relation(fields: [folderId], references: [id])
+  space        Space         @relation(fields: [spaceId], references: [id], onDelete: Cascade)
+  folder       Folder?       @relation(fields: [folderId], references: [id], onDelete: Cascade)
   statuses     Status[]
   tasks        Task[]
   sprints      Sprint[]
@@ -122,7 +122,7 @@ model Status {
   category String // 'todo' | 'in_progress' | 'done'
   position Int
 
-  list  List   @relation(fields: [listId], references: [id])
+  list  List   @relation(fields: [listId], references: [id], onDelete: Cascade)
   tasks Task[]
 
   @@map("statuses")
@@ -139,7 +139,7 @@ model Sprint {
   endDate   DateTime @map("end_date") @db.Date
   status    String   @default("planned") // 'planned' | 'active' | 'closed'
 
-  list  List   @relation(fields: [listId], references: [id])
+  list  List   @relation(fields: [listId], references: [id], onDelete: Cascade)
   tasks Task[]
 
   @@map("sprints")
@@ -162,10 +162,10 @@ model Task {
   createdAt    DateTime  @default(now()) @map("created_at")
   updatedAt    DateTime  @updatedAt @map("updated_at")
 
-  list     List    @relation(fields: [listId], references: [id])
-  parent   Task?   @relation("Subtasks", fields: [parentTaskId], references: [id])
+  list     List    @relation(fields: [listId], references: [id], onDelete: Cascade)
+  parent   Task?   @relation("Subtasks", fields: [parentTaskId], references: [id], onDelete: Cascade)
   subtasks Task[]  @relation("Subtasks")
-  sprint   Sprint? @relation(fields: [sprintId], references: [id])
+  sprint   Sprint? @relation(fields: [sprintId], references: [id], onDelete: SetNull)
   status   Status  @relation(fields: [statusId], references: [id])
   creator  User    @relation("TaskCreatedBy", fields: [createdBy], references: [id])
 
@@ -186,7 +186,7 @@ model TaskAssignee {
   taskId String @map("task_id")
   userId String @map("user_id")
 
-  task Task @relation(fields: [taskId], references: [id])
+  task Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
   user User @relation(fields: [userId], references: [id])
 
   @@id([taskId, userId])
@@ -198,8 +198,8 @@ model TaskDependency {
   blockingTaskId String @map("blocking_task_id")
   blockedTaskId  String @map("blocked_task_id")
 
-  blockingTask Task @relation("BlockingTask", fields: [blockingTaskId], references: [id])
-  blockedTask  Task @relation("BlockedTask", fields: [blockedTaskId], references: [id])
+  blockingTask Task @relation("BlockingTask", fields: [blockingTaskId], references: [id], onDelete: Cascade)
+  blockedTask  Task @relation("BlockedTask", fields: [blockedTaskId], references: [id], onDelete: Cascade)
 
   @@map("task_dependencies")
 }
@@ -220,7 +220,7 @@ model TaskTag {
   taskId String @map("task_id")
   tagId  String @map("tag_id")
 
-  task Task @relation(fields: [taskId], references: [id])
+  task Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
   tag  Tag  @relation(fields: [tagId], references: [id])
 
   @@id([taskId, tagId])
@@ -239,8 +239,8 @@ model CustomField {
   options     Json? // dropdown / multiselect choices
 
   workspace Workspace          @relation(fields: [workspaceId], references: [id])
-  space     Space?             @relation(fields: [spaceId], references: [id])
-  list      List?              @relation(fields: [listId], references: [id])
+  space     Space?             @relation(fields: [spaceId], references: [id], onDelete: Cascade)
+  list      List?              @relation(fields: [listId], references: [id], onDelete: Cascade)
   values    CustomFieldValue[]
 
   @@map("custom_fields")
@@ -252,8 +252,8 @@ model CustomFieldValue {
   customFieldId String @map("custom_field_id")
   value         Json
 
-  task        Task        @relation(fields: [taskId], references: [id])
-  customField CustomField @relation(fields: [customFieldId], references: [id])
+  task        Task        @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  customField CustomField @relation(fields: [customFieldId], references: [id], onDelete: Cascade)
 
   @@unique([taskId, customFieldId])
   @@map("custom_field_values")
@@ -269,7 +269,7 @@ model Comment {
   createdAt DateTime  @default(now()) @map("created_at")
   updatedAt DateTime? @map("updated_at")
 
-  task Task @relation(fields: [taskId], references: [id])
+  task Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
   user User @relation(fields: [userId], references: [id])
 
   @@map("comments")
@@ -283,7 +283,7 @@ model AcceptanceCriterion {
   position  Int
   createdAt DateTime @default(now()) @map("created_at")
 
-  task Task @relation(fields: [taskId], references: [id])
+  task Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
 
   @@map("acceptance_criteria")
 }
@@ -298,7 +298,7 @@ model Attachment {
   mimeType   String   @map("mime_type")
   createdAt  DateTime @default(now()) @map("created_at")
 
-  task     Task @relation(fields: [taskId], references: [id])
+  task     Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
   uploader User @relation(fields: [uploadedBy], references: [id])
 
   @@map("attachments")
@@ -312,7 +312,7 @@ model ActivityLog {
   meta      Json
   createdAt DateTime @default(now()) @map("created_at")
 
-  task Task @relation(fields: [taskId], references: [id])
+  task Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
   user User @relation(fields: [userId], references: [id])
 
   @@map("activity_log")

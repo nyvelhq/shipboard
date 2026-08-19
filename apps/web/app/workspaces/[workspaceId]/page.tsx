@@ -3,6 +3,7 @@
 import { FormEvent, useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { Trash2 } from 'lucide-react';
 import { api, ApiError, ListItem, Space } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { useToast } from '@/components/toast/toast-context';
@@ -78,6 +79,25 @@ export default function WorkspaceDetailPage() {
     }
   }
 
+  async function removeSpace(space: SpaceWithLists) {
+    if (!token) return;
+    const warning =
+      space.lists.length > 0
+        ? `Delete "${space.name}"? This also permanently deletes its ${space.lists.length} List${space.lists.length === 1 ? '' : 's'} and everything in them — tasks, comments, attachments, all of it. This can't be undone.`
+        : `Delete "${space.name}"? This can't be undone.`;
+    if (!window.confirm(warning)) return;
+    setError('');
+    try {
+      await api.deleteSpace(token, workspaceId, space.id);
+      await load(token);
+      toast.success('Space deleted.');
+    } catch (err) {
+      const message = err instanceof ApiError ? err.message : 'Failed to delete Space.';
+      setError(message);
+      toast.error(message);
+    }
+  }
+
   async function createList(spaceId: string) {
     const name = (newListNameBySpace[spaceId] || '').trim();
     if (!token || !name) return;
@@ -115,8 +135,19 @@ export default function WorkspaceDetailPage() {
       )}
 
       {spaces.map((space) => (
-        <section key={space.id} className="mb-4 rounded-lg border border-gray-200 p-4">
-          <h2 className="mb-3 text-base">{space.name}</h2>
+        <section key={space.id} className="group mb-4 rounded-lg border border-gray-200 p-4">
+          <div className="mb-3 flex items-center justify-between">
+            <h2 className="text-base">{space.name}</h2>
+            <button
+              type="button"
+              onClick={() => removeSpace(space)}
+              className="rounded p-1 text-gray-300 opacity-0 hover:bg-red-50 hover:text-red-600 group-hover:opacity-100"
+              aria-label={`Delete ${space.name}`}
+              title="Delete space"
+            >
+              <Trash2 size={15} />
+            </button>
+          </div>
 
           {space.lists.length === 0 ? (
             <p className="mb-3 text-sm text-gray-500">No Lists yet.</p>
