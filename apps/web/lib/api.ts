@@ -213,6 +213,14 @@ export const api = {
     request<ListItem>(`/workspaces/${workspaceId}/spaces/${spaceId}/lists/${listId}`, {}, token),
   listMembers: (token: string, workspaceId: string) =>
     request<Member[]>(`/workspaces/${workspaceId}/members`, {}, token),
+  addMember: (token: string, workspaceId: string, email: string, role: string) =>
+    request<Member>(
+      `/workspaces/${workspaceId}/members`,
+      { method: 'POST', body: JSON.stringify({ email, role }) },
+      token,
+    ),
+  removeMember: (token: string, workspaceId: string, userId: string) =>
+    request<{ ok: true }>(`/workspaces/${workspaceId}/members/${userId}`, { method: 'DELETE' }, token),
 
   listTasks: (token: string, workspaceId: string, spaceId: string, listId: string) =>
     request<Task[]>(`/workspaces/${workspaceId}/spaces/${spaceId}/lists/${listId}/tasks`, {}, token),

@@ -119,7 +119,15 @@ export default function WorkspaceDetailPage() {
 
   return (
     <main className="mx-auto max-w-3xl px-6 py-10">
-      <h1 className="mb-6 text-2xl">{loading ? 'Loading…' : workspaceName}</h1>
+      <div className="mb-6 flex items-center justify-between">
+        <h1 className="text-2xl">{loading ? 'Loading…' : workspaceName}</h1>
+        <Link
+          href={`/workspaces/${workspaceId}/members`}
+          className="rounded-md border border-gray-300 px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50"
+        >
+          Members
+        </Link>
+      </div>
 
       {error && <p className="text-red-600">{error}</p>}
 
