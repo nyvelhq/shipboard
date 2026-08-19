@@ -115,7 +115,12 @@ export default function WorkspaceDetailPage() {
             <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 .75rem' }}>
               {space.lists.map((list) => (
                 <li key={list.id} style={{ padding: '.4rem 0', borderTop: '1px solid #f2f2f2' }}>
-                  {list.name}
+                  <Link
+                    href={`/workspaces/${workspaceId}/spaces/${space.id}/lists/${list.id}`}
+                    style={{ color: '#12151a', fontWeight: 600, textDecoration: 'none' }}
+                  >
+                    {list.name}
+                  </Link>
                   <span style={{ ...mutedStyle, fontSize: '.8rem', marginLeft: '.5rem' }}>{list.type}</span>
                 </li>
               ))}

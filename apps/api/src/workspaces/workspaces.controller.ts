@@ -25,4 +25,10 @@ export class WorkspacesController {
   findOne(@Param('workspaceId') workspaceId: string) {
     return this.workspaces.findOne(workspaceId);
   }
+
+  @UseGuards(WorkspaceMembershipGuard)
+  @Get(':workspaceId/members')
+  listMembers(@Param('workspaceId') workspaceId: string) {
+    return this.workspaces.listMembers(workspaceId);
+  }
 }

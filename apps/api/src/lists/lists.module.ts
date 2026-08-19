@@ -7,5 +7,6 @@ import { SpacesModule } from '../spaces/spaces.module';
   imports: [SpacesModule],
   controllers: [ListsController],
   providers: [ListsService],
+  exports: [ListsService],
 })
 export class ListsModule {}

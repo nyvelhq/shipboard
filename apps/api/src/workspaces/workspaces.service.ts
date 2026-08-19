@@ -31,6 +31,14 @@ export class WorkspacesService {
     return workspace;
   }
 
+  listMembers(workspaceId: string) {
+    return this.prisma.workspaceMember.findMany({
+      where: { workspaceId },
+      include: { user: { select: { id: true, name: true, email: true } } },
+      orderBy: { joinedAt: 'asc' },
+    });
+  }
+
   private async uniqueSlug(name: string): Promise<string> {
     const base =
       name

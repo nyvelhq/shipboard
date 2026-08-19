@@ -59,6 +59,46 @@ export interface ListItem {
   statuses?: Status[];
 }
 
+export interface Member {
+  workspaceId: string;
+  userId: string;
+  role: string;
+  joinedAt: string;
+  user: { id: string; name: string; email: string };
+}
+
+export interface TaskAssignee {
+  taskId: string;
+  userId: string;
+  user: { id: string; name: string; email: string };
+}
+
+export interface Task {
+  id: string;
+  listId: string;
+  parentTaskId: string | null;
+  statusId: string;
+  name: string;
+  description: string | null;
+  priority: string;
+  startDate: string | null;
+  dueDate: string | null;
+  position: number;
+  status: Status;
+  assignees: TaskAssignee[];
+  subtasks?: Task[];
+}
+
+export interface TaskInput {
+  name?: string;
+  description?: string;
+  priority?: string;
+  statusId?: string;
+  startDate?: string;
+  dueDate?: string;
+  assigneeIds?: string[];
+}
+
 export const api = {
   signup: (data: { email: string; name: string; password: string }) =>
     request<{ token: string; user: AuthUser }>('/auth/signup', {
@@ -89,6 +129,51 @@ export const api = {
     request<ListItem>(
       `/workspaces/${workspaceId}/spaces/${spaceId}/lists`,
       { method: 'POST', body: JSON.stringify({ name }) },
+      token,
+    ),
+  getList: (token: string, workspaceId: string, spaceId: string, listId: string) =>
+    request<ListItem>(`/workspaces/${workspaceId}/spaces/${spaceId}/lists/${listId}`, {}, token),
+  listMembers: (token: string, workspaceId: string) =>
+    request<Member[]>(`/workspaces/${workspaceId}/members`, {}, token),
+
+  listTasks: (token: string, workspaceId: string, spaceId: string, listId: string) =>
+    request<Task[]>(`/workspaces/${workspaceId}/spaces/${spaceId}/lists/${listId}/tasks`, {}, token),
+  createTask: (token: string, workspaceId: string, spaceId: string, listId: string, input: TaskInput) =>
+    request<Task>(
+      `/workspaces/${workspaceId}/spaces/${spaceId}/lists/${listId}/tasks`,
+      { method: 'POST', body: JSON.stringify(input) },
+      token,
+    ),
+  updateTask: (
+    token: string,
+    workspaceId: string,
+    spaceId: string,
+    listId: string,
+    taskId: string,
+    input: TaskInput,
+  ) =>
+    request<Task>(
+      `/workspaces/${workspaceId}/spaces/${spaceId}/lists/${listId}/tasks/${taskId}`,
+      { method: 'PATCH', body: JSON.stringify(input) },
+      token,
+    ),
+  deleteTask: (token: string, workspaceId: string, spaceId: string, listId: string, taskId: string) =>
+    request<{ ok: true }>(
+      `/workspaces/${workspaceId}/spaces/${spaceId}/lists/${listId}/tasks/${taskId}`,
+      { method: 'DELETE' },
+      token,
+    ),
+  createSubtask: (
+    token: string,
+    workspaceId: string,
+    spaceId: string,
+    listId: string,
+    taskId: string,
+    input: TaskInput,
+  ) =>
+    request<Task>(
+      `/workspaces/${workspaceId}/spaces/${spaceId}/lists/${listId}/tasks/${taskId}/subtasks`,
+      { method: 'POST', body: JSON.stringify(input) },
       token,
     ),
 };

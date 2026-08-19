@@ -6,13 +6,23 @@ import { WorkspacesModule } from './workspaces/workspaces.module';
 import { SpacesModule } from './spaces/spaces.module';
 import { FoldersModule } from './folders/folders.module';
 import { ListsModule } from './lists/lists.module';
+import { TasksModule } from './tasks/tasks.module';
 import { HealthController } from './health.controller';
 
-// Sprints, Tasks, CustomFields, Comments, Attachments modules are Week 3-8
-// work per HANDOFF.md — not stubbed here for the same reason nothing else
-// in this scaffold is: no fake-finished code to unwind later.
+// Sprints, CustomFields, Comments, Attachments modules are Week 5-8 work
+// per HANDOFF.md — not stubbed here for the same reason nothing else in
+// this scaffold is: no fake-finished code to unwind later.
 @Module({
-  imports: [PrismaModule, CommonModule, AuthModule, WorkspacesModule, SpacesModule, FoldersModule, ListsModule],
+  imports: [
+    PrismaModule,
+    CommonModule,
+    AuthModule,
+    WorkspacesModule,
+    SpacesModule,
+    FoldersModule,
+    ListsModule,
+    TasksModule,
+  ],
   controllers: [HealthController],
 })
 export class AppModule {}
