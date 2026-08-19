@@ -3,9 +3,8 @@
 import { FormEvent, useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { api, ApiError, ListItem, Space } from '../../../lib/api';
-import { useAuth } from '../../../lib/auth-context';
-import { buttonStyle, errorStyle, inputStyle, mutedStyle } from '../../../lib/ui';
+import { api, ApiError, ListItem, Space } from '@/lib/api';
+import { useAuth } from '@/lib/auth-context';
 
 interface SpaceWithLists extends Space {
   lists: ListItem[];
@@ -94,50 +93,53 @@ export default function WorkspaceDetailPage() {
   if (!ready || !token) return null;
 
   return (
-    <main style={{ maxWidth: 720, margin: '3rem auto', padding: '0 1.5rem' }}>
+    <main className="mx-auto max-w-3xl px-6 py-12">
       <p>
-        <Link href="/workspaces" style={{ color: '#2a655d' }}>
+        <Link href="/workspaces" className="text-teal-700 hover:underline">
           &larr; All workspaces
         </Link>
       </p>
-      <h1 style={{ marginBottom: '1.5rem' }}>{loading ? 'Loading…' : workspaceName}</h1>
+      <h1 className="mb-6">{loading ? 'Loading…' : workspaceName}</h1>
 
-      {error && <p style={errorStyle}>{error}</p>}
-      {!loading && spaces.length === 0 && <p style={mutedStyle}>No Spaces yet — create your first one below.</p>}
+      {error && <p className="text-red-600">{error}</p>}
+      {!loading && spaces.length === 0 && (
+        <p className="text-gray-500">No Spaces yet — create your first one below.</p>
+      )}
 
       {spaces.map((space) => (
-        <section key={space.id} style={{ border: '1px solid #eee', borderRadius: 8, padding: '1rem', marginBottom: '1rem' }}>
-          <h2 style={{ fontSize: '1rem', margin: '0 0 .75rem' }}>{space.name}</h2>
+        <section key={space.id} className="mb-4 rounded-lg border border-gray-200 p-4">
+          <h2 className="mb-3 text-base">{space.name}</h2>
 
           {space.lists.length === 0 ? (
-            <p style={{ ...mutedStyle, fontSize: '.9rem' }}>No Lists yet.</p>
+            <p className="mb-3 text-sm text-gray-500">No Lists yet.</p>
           ) : (
-            <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 .75rem' }}>
+            <ul className="mb-3 list-none p-0">
               {space.lists.map((list) => (
-                <li key={list.id} style={{ padding: '.4rem 0', borderTop: '1px solid #f2f2f2' }}>
+                <li key={list.id} className="border-t border-gray-100 py-1.5">
                   <Link
                     href={`/workspaces/${workspaceId}/spaces/${space.id}/lists/${list.id}`}
-                    style={{ color: '#12151a', fontWeight: 600, textDecoration: 'none' }}
+                    className="font-semibold text-gray-900 no-underline hover:text-teal-700"
                   >
                     {list.name}
                   </Link>
-                  <span style={{ ...mutedStyle, fontSize: '.8rem', marginLeft: '.5rem' }}>{list.type}</span>
+                  <span className="ml-2 text-sm text-gray-500">{list.type}</span>
                 </li>
               ))}
             </ul>
           )}
 
-          <div style={{ display: 'flex', gap: '.5rem' }}>
+          <div className="flex gap-2">
             <input
               value={newListNameBySpace[space.id] || ''}
               onChange={(e) => setNewListNameBySpace((prev) => ({ ...prev, [space.id]: e.target.value }))}
               placeholder="New list name"
-              style={{ ...inputStyle, flex: 1 }}
+              className="flex-1 rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-600"
             />
             <button
+              type="button"
               onClick={() => createList(space.id)}
               disabled={creatingListFor === space.id}
-              style={{ ...buttonStyle, padding: '.5rem .8rem', fontSize: '.85rem' }}
+              className="rounded-md bg-gray-900 px-3 py-2 text-sm font-semibold text-white hover:bg-gray-800"
             >
               {creatingListFor === space.id ? 'Adding…' : 'Add list'}
             </button>
@@ -145,14 +147,18 @@ export default function WorkspaceDetailPage() {
         </section>
       ))}
 
-      <form onSubmit={createSpace} style={{ display: 'flex', gap: '.5rem', marginTop: '1.5rem' }}>
+      <form onSubmit={createSpace} className="mt-6 flex gap-2">
         <input
           value={newSpaceName}
           onChange={(e) => setNewSpaceName(e.target.value)}
           placeholder="New Space name"
-          style={{ ...inputStyle, flex: 1 }}
+          className="flex-1 rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-600"
         />
-        <button type="submit" disabled={creatingSpace} style={buttonStyle}>
+        <button
+          type="submit"
+          disabled={creatingSpace}
+          className="rounded-md bg-gray-900 px-4 py-2 text-sm font-semibold text-white hover:bg-gray-800"
+        >
           {creatingSpace ? 'Creating…' : 'Create Space'}
         </button>
       </form>

@@ -3,9 +3,8 @@
 import { FormEvent, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { api, ApiError, Workspace } from '../../lib/api';
-import { useAuth } from '../../lib/auth-context';
-import { buttonStyle, errorStyle, ghostButtonStyle, inputStyle, mutedStyle } from '../../lib/ui';
+import { api, ApiError, Workspace } from '@/lib/api';
+import { useAuth } from '@/lib/auth-context';
 
 export default function WorkspacesPage() {
   const { token, user, ready, logout } = useAuth();
@@ -56,49 +55,54 @@ export default function WorkspacesPage() {
   if (!ready || !token) return null;
 
   return (
-    <main style={{ maxWidth: 640, margin: '3rem auto', padding: '0 1.5rem' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '1.5rem' }}>
+    <main className="mx-auto max-w-2xl px-6 py-12">
+      <div className="mb-6 flex items-baseline justify-between">
         <div>
-          <h1 style={{ margin: 0 }}>Shipboard</h1>
-          <p style={{ margin: '.25rem 0 0', ...mutedStyle }}>{user?.name}</p>
+          <h1 className="m-0">Shipboard</h1>
+          <p className="mt-1 text-gray-500">{user?.name}</p>
         </div>
         <button
+          type="button"
           onClick={() => {
             logout();
             router.push('/login');
           }}
-          style={ghostButtonStyle}
+          className="rounded-md border border-gray-300 px-3.5 py-2 text-sm text-gray-700 hover:bg-gray-50"
         >
           Sign out
         </button>
       </div>
 
-      <h2 style={{ fontSize: '1.1rem' }}>Your workspaces</h2>
+      <h2 className="text-lg">Your workspaces</h2>
       {loading && <p>Loading…</p>}
-      {error && <p style={errorStyle}>{error}</p>}
+      {error && <p className="text-red-600">{error}</p>}
       {!loading && workspaces.length === 0 && (
-        <p style={mutedStyle}>No workspaces yet — create your first one below.</p>
+        <p className="text-gray-500">No workspaces yet — create your first one below.</p>
       )}
 
-      <ul style={{ listStyle: 'none', padding: 0, margin: '1rem 0' }}>
+      <ul className="my-4 list-none p-0">
         {workspaces.map((ws) => (
-          <li key={ws.id} style={{ borderBottom: '1px solid #eee', padding: '.75rem 0' }}>
-            <Link href={`/workspaces/${ws.id}`} style={{ color: '#12151a', fontWeight: 600, textDecoration: 'none' }}>
+          <li key={ws.id} className="border-b border-gray-100 py-3">
+            <Link href={`/workspaces/${ws.id}`} className="font-semibold text-gray-900 no-underline hover:text-teal-700">
               {ws.name}
             </Link>
-            <span style={{ ...mutedStyle, marginLeft: '.5rem', fontSize: '.85rem' }}>{ws.plan}</span>
+            <span className="ml-2 text-sm text-gray-500">{ws.plan}</span>
           </li>
         ))}
       </ul>
 
-      <form onSubmit={createWorkspace} style={{ display: 'flex', gap: '.5rem', marginTop: '1.5rem' }}>
+      <form onSubmit={createWorkspace} className="mt-6 flex gap-2">
         <input
           value={newName}
           onChange={(e) => setNewName(e.target.value)}
           placeholder="New workspace name"
-          style={{ ...inputStyle, flex: 1 }}
+          className="flex-1 rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-600"
         />
-        <button type="submit" disabled={creating} style={buttonStyle}>
+        <button
+          type="submit"
+          disabled={creating}
+          className="rounded-md bg-gray-900 px-4 py-2 text-sm font-semibold text-white hover:bg-gray-800"
+        >
           {creating ? 'Creating…' : 'Create'}
         </button>
       </form>
