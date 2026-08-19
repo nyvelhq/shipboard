@@ -157,6 +157,34 @@ exactly where to start.
      page uses `py-10`. Also confirmed several *look*-like-inconsistencies
      are actually intentional (documented in that commit) rather than
      fixing them reflexively.
+- **Post-overhaul feature requests**, small and user-driven:
+  - **Acceptance Criteria** — a real per-item checklist on the Task
+    detail view (new `AcceptanceCriterion` model/module), not a text
+    field; anyone with task access can check/edit/delete an item, not
+    just its author, matching how status/priority/assignee already work.
+  - **Link attachments + clipboard-paste images** — `POST
+    .../attachments/link` creates an Attachment with no uploaded file,
+    using a sentinel `mimeType` (`text/uri-list`) to tell the frontend
+    it's a link rather than adding a schema column. Pasting an image
+    anywhere in the Task detail modal uploads it through the same
+    endpoint the file picker uses; the paste handler only intercepts
+    when the clipboard actually holds an image, so text-paste elsewhere
+    in the modal is untouched.
+  - **Sprint delete** — the backend endpoint and API client method had
+    existed since Week 9-10; no button anywhere ever called them.
+  - **Cascade-delete fix** — investigating the Sprint/Space delete gap
+    surfaced that *no relation in the entire schema* had an `onDelete`
+    rule, meaning Task deletion (live since Week 1-2) was already
+    silently broken for any task with a comment, attachment, custom
+    field value, dependency, tag, or acceptance criterion — none of
+    those were cleaned up before the delete. Fixed at the schema level
+    (`onDelete: Cascade` across every true parent-owns-child relation;
+    `Task.sprint` already correctly defaulted to `SetNull` for its
+    nullable FK). One migration, `fix_cascade_deletes`. This unblocked
+    a working **Space delete** button — the one delete action in the
+    app with a confirmation dialog, since its blast radius (every List/
+    Task/comment/attachment underneath it) is categorically different
+    from every other single-row delete in the app.
 
 **Weeks 1-2 through 11 are done — 11 of the PRD's 12 weeks.** Verified
 live in a browser, not just build checks. Most recently: set a Task's
