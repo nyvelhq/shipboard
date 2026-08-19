@@ -19,13 +19,15 @@ All 12 weeks of the PRD's plan are built. Two npm workspaces:
   gateway that broadcasts changes to every client viewing the same List
   in real time. The full data model from the PRD is in
   `apps/api/prisma/schema.prisma`, migrated against Postgres.
-- `apps/web` — Next.js 14 App Router, Tailwind throughout. Sign-in/sign-up,
-  a Workspace list, a Workspace detail view, a List view with an editable
-  Task table, a Board (Kanban) view with drag-and-drop, a Task detail
-  panel (description, custom fields, attachments, comments), Sprint
-  planning (backlog ↔ sprint assignment, velocity tracking), and a
-  hand-built Timeline (Gantt) view — List/Board/detail/Sprints/Timeline
-  all update live across open tabs without a reload.
+- `apps/web` — Next.js 14 App Router, Tailwind throughout, Inter
+  typeface. A persistent app shell (collapsible sidebar, breadcrumbs),
+  a List view with an editable Task table, a Kanban Board with drag-
+  and-drop and priority-icon/story-point cards, a Task detail view
+  (title/status/description on the left, assignee/reporter/dates/labels
+  on the right), Sprint planning (backlog ↔ sprint assignment, velocity
+  tracking), a hand-built Timeline (Gantt) view, toast notifications,
+  and skeleton loading states — List/Board/detail/Sprints/Timeline all
+  update live across open tabs without a reload.
 
 See `HANDOFF.md` for what's deliberately out of scope (not missing —
 scoped) and the one interaction that still needs a human to verify in a

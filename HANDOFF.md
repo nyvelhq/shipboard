@@ -65,9 +65,12 @@ exactly where to start.
   client-side, which is simpler to reason about and correct by
   construction. A deliberate scope choice, not a shortcut hiding a gap.
 - **Board (Kanban) view** — `/workspaces/[id]/spaces/[id]/lists/[id]/board`:
-  columns grouped by the List's own status workflow, cards show priority +
-  assignee initial + due date, drag-and-drop between columns PATCHes the
-  Task's `statusId`. A List/Board toggle sits in both views' headers.
+  columns grouped by the List's own status workflow with a colored top
+  accent per status, drag-and-drop between columns PATCHes the Task's
+  `statusId`. Cards show title, a priority *icon* (not a text badge —
+  reads faster at a glance), a story-points badge when set, assignee
+  avatar, and due date; the dragged card gets a lift effect (rotate +
+  opacity + shadow). A List/Board toggle sits in every view's header.
 - **Custom Fields** — workspace-scoped field definitions (text, number,
   currency, dropdown, multiselect, date, checkbox, person), optionally
   narrowed to one Space or one List. `GET .../lists/:id/custom-fields`
@@ -88,10 +91,15 @@ exactly where to start.
   interceptor specifically because multer writes to disk *before* a
   handler's own checks would catch a bad `taskId` — verified: a
   mismatched ID 404s and leaves zero files on disk.
-- **Task detail panel** — a slide-over (opened via a small button on each
-  List-view row) showing description, custom fields, attachments, and
-  comments for one Task. This is the surface Week 7-8's collaboration
-  features actually needed; nothing like it existed before.
+- **Task detail view** — a centered modal (opened via a small button on
+  each List-view row, or from a Board card or Timeline bar) with a real
+  70/30 layout: title (editable), status dropdown, description,
+  attachments, and comments on the left; assignee, reporter, priority,
+  sprint, story points, dates, and custom fields ("Labels") on the
+  right. `Task.creator` (always in the schema, never in an API response
+  before this) now backs "Reporter". Status/priority/assignee are
+  editable from here for the first time — previously only List/Board
+  rows had those controls.
 - **Sprints** — `/workspaces/[id]/spaces/[id]/lists/[id]/sprints`: create
   a Sprint (name, goal, date range), a two-column detail page (Backlog /
   In this Sprint) to move Tasks in and out via plain buttons — no
@@ -121,6 +129,34 @@ exactly where to start.
 - `lib/api.ts` is the typed client for every endpoint through Week 11.
 - `docker-compose.yml` for local Postgres + Redis, CI that installs,
   generates the Prisma client, and builds both workspaces on every push.
+- **UI/UX design pass** (post-Week-12, user-requested, done in 5 bits —
+  see individual commits for the full reasoning behind each):
+  1. *Design foundation + global shell.* Inter (`next/font/google`); a
+     persistent `AppShell` (`components/shell/`) — dark collapsible
+     sidebar with a Space→List nav tree, breadcrumbs, user/sign-out in
+     the header — applied to every `/workspaces/**` route via a single
+     Next.js layout file, not per-page wiring. `lucide-react` added for
+     iconography (small, tree-shakeable, not a heavyweight kit).
+  2. *Board polish* — see the Board bullet above.
+  3. *Task detail as a real 70/30 view* — see the bullet above. Caught
+     and fixed a real bug while verifying it: `TaskRow`'s name/due-date
+     inputs used uncontrolled `defaultValue`, which React never
+     re-syncs after mount — renaming a Task via the new modal left the
+     List row showing the stale name until a full reload. Fixed with a
+     value-keyed `key` prop on both inputs.
+  4. *Micro-interactions* — a toast system (`components/toast/`, wired
+     at the root layout) for creates and destructive/upload actions
+     (not on every field edit — too noisy); a `Skeleton` primitive
+     (`components/skeleton.tsx`) replacing bare "Loading…" text on
+     every page; a global `:focus-visible` ring on all buttons/links.
+  5. *Consistency pass* — a grep-driven audit (not a re-read-every-page
+     guess) that caught four real drifts: two pages' `<h1>` missing the
+     `text-2xl` override every other page uses, two empty-state
+     messages using `text-gray-400` where the app-wide convention is
+     `text-gray-500`, and two pages using `py-12` where every other
+     page uses `py-10`. Also confirmed several *look*-like-inconsistencies
+     are actually intentional (documented in that commit) rather than
+     fixing them reflexively.
 
 **Weeks 1-2 through 11 are done — 11 of the PRD's 12 weeks.** Verified
 live in a browser, not just build checks. Most recently: set a Task's
@@ -184,10 +220,12 @@ Postgres instance and a real browser, not just build checks — auth,
 the full Workspace→Space→Folder→List→Task hierarchy with a permission
 model verified against actual ID-guessing attacks, real-time sync over
 Socket.IO, List/Board/Sprints/Timeline views, Custom Fields, Comments,
-Attachments, and Sprint planning with velocity tracking. Every page now
-uses Tailwind consistently — the last three holdouts (`/login`,
-`/workspaces`, `/workspaces/[id]`) were migrated off their original
-Week 1-2 inline styles as the final hardening pass.
+Attachments, and Sprint planning with velocity tracking. On top of that,
+a full 5-bit UI/UX pass (see above) took the app from Week 1-2's plain
+styling to a persistent shell (sidebar/breadcrumbs), a polished Kanban
+board, a real 70/30 issue view, toasts/skeletons/focus rings, and a
+grep-audited consistency pass — every page uses Tailwind consistently
+now, not just most of them.
 
 **One thing genuinely still needs a human, not an agent:** the Board's
 drag-and-drop gesture was implemented with the standard React HTML5 DnD
