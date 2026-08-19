@@ -139,6 +139,7 @@ export interface Task {
   position: number;
   status: Status;
   sprint: Sprint | null;
+  creator: { id: string; name: string; email: string };
   assignees: TaskAssignee[];
   customFieldValues: CustomFieldValue[];
   subtasks?: Task[];

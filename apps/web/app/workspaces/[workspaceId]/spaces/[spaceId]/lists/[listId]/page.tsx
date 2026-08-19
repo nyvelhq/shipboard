@@ -176,11 +176,13 @@ export default function ListDetailPage() {
 
       {selectedTask && (
         <TaskDetailPanel
+          key={selectedTask.id}
           token={token}
           workspaceId={workspaceId}
           spaceId={spaceId}
           listId={listId}
           task={selectedTask}
+          statuses={list?.statuses ?? []}
           customFields={customFields}
           members={members}
           onClose={() => setSelectedTaskId(null)}

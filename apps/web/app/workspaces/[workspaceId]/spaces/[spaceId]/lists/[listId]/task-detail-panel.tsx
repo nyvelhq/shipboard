@@ -1,11 +1,13 @@
 'use client';
 
 import { ChangeEvent, FormEvent, useEffect, useState } from 'react';
+import { X } from 'lucide-react';
 import {
   Attachment,
   Comment,
   CustomField,
   Member,
+  Status,
   Task,
   TaskInput,
   api,
@@ -13,12 +15,15 @@ import {
   API_URL,
 } from '@/lib/api';
 
+const PRIORITIES = ['urgent', 'high', 'normal', 'low'];
+
 interface Props {
   token: string;
   workspaceId: string;
   spaceId: string;
   listId: string;
   task: Task;
+  statuses: Status[];
   customFields: CustomField[];
   members: Member[];
   onClose: () => void;
@@ -31,11 +36,13 @@ export function TaskDetailPanel({
   spaceId,
   listId,
   task,
+  statuses,
   customFields,
   members,
   onClose,
   onPatch,
 }: Props) {
+  const [title, setTitle] = useState(task.name);
   const [description, setDescription] = useState(task.description ?? '');
   const [comments, setComments] = useState<Comment[]>([]);
   const [attachments, setAttachments] = useState<Attachment[]>([]);
@@ -45,7 +52,6 @@ export function TaskDetailPanel({
   const [error, setError] = useState('');
 
   useEffect(() => {
-    setDescription(task.description ?? '');
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [task.id]);
@@ -68,19 +74,18 @@ export function TaskDetailPanel({
     return task.customFieldValues.find((v) => v.customFieldId === fieldId)?.value;
   }
 
+  async function saveTitle() {
+    if (!title.trim()) {
+      setTitle(task.name);
+      return;
+    }
+    if (title.trim() === task.name) return;
+    await onPatch(task.id, { name: title.trim() });
+  }
+
   async function saveDescription() {
     if (description === (task.description ?? '')) return;
     await onPatch(task.id, { description });
-  }
-
-  async function saveStartDate(value: string) {
-    if (!value) return;
-    await onPatch(task.id, { startDate: value });
-  }
-
-  async function saveDueDate(value: string) {
-    if (!value) return;
-    await onPatch(task.id, { dueDate: value });
   }
 
   async function saveCustomField(fieldId: string, value: unknown) {
@@ -139,148 +144,239 @@ export function TaskDetailPanel({
     }
   }
 
+  const fieldLabelClass = 'mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-500';
+  const sideInputClass =
+    'w-full rounded-md border border-gray-200 bg-white px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-teal-600';
+
   return (
-    <div className="fixed inset-0 z-40 flex justify-end bg-black/20" onClick={onClose}>
+    <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/40 p-4" onClick={onClose}>
       <div
-        className="flex h-full w-full max-w-md flex-col overflow-y-auto bg-white p-6 shadow-xl"
+        className="flex max-h-[85vh] w-full max-w-4xl flex-col overflow-hidden rounded-lg bg-white shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="mb-4 flex items-start justify-between">
-          <h2 className="pr-4 text-lg font-semibold text-gray-900">{task.name}</h2>
-          <button type="button" onClick={onClose} className="text-gray-400 hover:text-gray-700" aria-label="Close">
-            ✕
+        <div className="flex shrink-0 items-center justify-between border-b border-gray-100 px-6 py-3">
+          <input
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            onBlur={saveTitle}
+            className="-mx-1 flex-1 rounded-md border border-transparent bg-transparent px-1 text-xl font-semibold text-gray-900 outline-none focus:border-gray-200 focus:ring-2 focus:ring-teal-600"
+          />
+          <button
+            type="button"
+            onClick={onClose}
+            className="ml-4 shrink-0 rounded-md p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-700"
+            aria-label="Close"
+          >
+            <X size={18} />
           </button>
         </div>
 
-        {error && <p className="mb-3 text-sm text-red-600">{error}</p>}
+        {error && <p className="shrink-0 px-6 pt-3 text-sm text-red-600">{error}</p>}
 
-        <section className="mb-6">
-          <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-500">
-            Description
-          </label>
-          <textarea
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            onBlur={saveDescription}
-            rows={3}
-            placeholder="Add a description…"
-            className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-600"
-          />
-        </section>
-
-        <section className="mb-6 flex gap-4">
-          <div className="flex-1">
-            <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-500">
-              Start date
-            </label>
-            <input
-              type="date"
-              defaultValue={task.startDate ? task.startDate.slice(0, 10) : ''}
-              onChange={(e) => saveStartDate(e.target.value)}
-              className="w-full rounded-md border border-gray-200 px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-teal-600"
-            />
-          </div>
-          <div className="flex-1">
-            <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-500">
-              Due date
-            </label>
-            <input
-              type="date"
-              defaultValue={task.dueDate ? task.dueDate.slice(0, 10) : ''}
-              onChange={(e) => saveDueDate(e.target.value)}
-              className="w-full rounded-md border border-gray-200 px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-teal-600"
-            />
-          </div>
-        </section>
-
-        {customFields.length > 0 && (
-          <section className="mb-6">
-            <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500">Custom fields</h3>
-            <div className="flex flex-col gap-3">
-              {customFields.map((field) => (
-                <CustomFieldInput
-                  key={field.id}
-                  field={field}
-                  members={members}
-                  value={currentValue(field.id)}
-                  onChange={(value) => saveCustomField(field.id, value)}
-                />
-              ))}
+        <div className="flex flex-1 overflow-hidden">
+          {/* Main content — 70% */}
+          <div className="flex-[7] overflow-y-auto px-6 py-5">
+            <div className="mb-5 flex items-center gap-2">
+              <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: task.status.color }} />
+              <select
+                value={task.statusId}
+                onChange={(e) => onPatch(task.id, { statusId: e.target.value })}
+                className="rounded-md border border-gray-200 px-2.5 py-1.5 text-sm font-medium text-gray-700 focus:outline-none focus:ring-2 focus:ring-teal-600"
+              >
+                {statuses.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.name}
+                  </option>
+                ))}
+              </select>
             </div>
-          </section>
-        )}
 
-        <section className="mb-6">
-          <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500">
-            Attachments {attachments.length > 0 && `(${attachments.length})`}
-          </h3>
-          <div className="flex flex-col gap-2">
-            {attachments.map((att) => (
-              <div key={att.id} className="flex items-center justify-between rounded border border-gray-200 px-3 py-2 text-sm">
-                <a
-                  href={`${API_URL}${att.url}`}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="truncate text-teal-700 hover:underline"
-                >
-                  {att.filename}
-                </a>
-                <button
-                  type="button"
-                  onClick={() => removeAttachment(att.id)}
-                  className="ml-2 shrink-0 text-gray-300 hover:text-red-600"
-                  aria-label="Remove attachment"
-                >
-                  ✕
-                </button>
-              </div>
-            ))}
-          </div>
-          <label className="mt-2 inline-block cursor-pointer text-sm font-medium text-teal-700 hover:underline">
-            {uploading ? 'Uploading…' : '+ Add attachment'}
-            <input type="file" className="hidden" onChange={handleFileChange} disabled={uploading} />
-          </label>
-        </section>
+            <section className="mb-6">
+              <label className={fieldLabelClass}>Description</label>
+              <textarea
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                onBlur={saveDescription}
+                rows={4}
+                placeholder="Add a description…"
+                className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-600"
+              />
+            </section>
 
-        <section>
-          <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500">
-            Comments {comments.length > 0 && `(${comments.length})`}
-          </h3>
-          <div className="flex flex-col gap-3">
-            {comments.map((c) => (
-              <div key={c.id} className="rounded border border-gray-100 bg-gray-50 p-2.5 text-sm">
-                <div className="mb-1 flex items-center justify-between">
-                  <span className="font-medium text-gray-700">{c.user.name}</span>
-                  <button
-                    type="button"
-                    onClick={() => removeComment(c.id)}
-                    className="text-xs text-gray-300 hover:text-red-600"
+            <section className="mb-6">
+              <h3 className={fieldLabelClass}>
+                Attachments {attachments.length > 0 && `(${attachments.length})`}
+              </h3>
+              <div className="flex flex-col gap-2">
+                {attachments.map((att) => (
+                  <div
+                    key={att.id}
+                    className="flex items-center justify-between rounded border border-gray-200 px-3 py-2 text-sm"
                   >
-                    delete
-                  </button>
-                </div>
-                <p className="text-gray-800">{c.body}</p>
+                    <a
+                      href={`${API_URL}${att.url}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="truncate text-teal-700 hover:underline"
+                    >
+                      {att.filename}
+                    </a>
+                    <button
+                      type="button"
+                      onClick={() => removeAttachment(att.id)}
+                      className="ml-2 shrink-0 text-gray-300 hover:text-red-600"
+                      aria-label="Remove attachment"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                ))}
               </div>
-            ))}
-            {comments.length === 0 && <p className="text-sm text-gray-400">No comments yet.</p>}
+              <label className="mt-2 inline-block cursor-pointer text-sm font-medium text-teal-700 hover:underline">
+                {uploading ? 'Uploading…' : '+ Add attachment'}
+                <input type="file" className="hidden" onChange={handleFileChange} disabled={uploading} />
+              </label>
+            </section>
+
+            <section>
+              <h3 className={fieldLabelClass}>Comments {comments.length > 0 && `(${comments.length})`}</h3>
+              <div className="flex flex-col gap-3">
+                {comments.map((c) => (
+                  <div key={c.id} className="rounded border border-gray-100 bg-gray-50 p-2.5 text-sm">
+                    <div className="mb-1 flex items-center justify-between">
+                      <span className="font-medium text-gray-700">{c.user.name}</span>
+                      <button
+                        type="button"
+                        onClick={() => removeComment(c.id)}
+                        className="text-xs text-gray-300 hover:text-red-600"
+                      >
+                        delete
+                      </button>
+                    </div>
+                    <p className="text-gray-800">{c.body}</p>
+                  </div>
+                ))}
+                {comments.length === 0 && <p className="text-sm text-gray-400">No comments yet.</p>}
+              </div>
+
+              <form onSubmit={submitComment} className="mt-3 flex gap-2">
+                <input
+                  value={newComment}
+                  onChange={(e) => setNewComment(e.target.value)}
+                  placeholder="Add a comment…"
+                  className="flex-1 rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-600"
+                />
+                <button
+                  type="submit"
+                  disabled={postingComment}
+                  className="rounded-md bg-gray-900 px-3 py-2 text-sm font-semibold text-white hover:bg-gray-800"
+                >
+                  Post
+                </button>
+              </form>
+            </section>
           </div>
 
-          <form onSubmit={submitComment} className="mt-3 flex gap-2">
-            <input
-              value={newComment}
-              onChange={(e) => setNewComment(e.target.value)}
-              placeholder="Add a comment…"
-              className="flex-1 rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-600"
-            />
-            <button
-              type="submit"
-              disabled={postingComment}
-              className="rounded-md bg-gray-900 px-3 py-2 text-sm font-semibold text-white hover:bg-gray-800"
-            >
-              Post
-            </button>
-          </form>
-        </section>
+          {/* Metadata sidebar — 30% */}
+          <div className="flex-[3] overflow-y-auto border-l border-gray-100 bg-gray-50/60 px-5 py-5">
+            <div className="mb-4">
+              <label className={fieldLabelClass}>Assignee</label>
+              <select
+                value={task.assignees[0]?.userId ?? ''}
+                onChange={(e) =>
+                  onPatch(task.id, { assigneeIds: e.target.value ? [e.target.value] : [] })
+                }
+                className={sideInputClass}
+              >
+                <option value="">Unassigned</option>
+                {members.map((m) => (
+                  <option key={m.userId} value={m.userId}>
+                    {m.user.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="mb-4">
+              <label className={fieldLabelClass}>Reporter</label>
+              <p className="px-0.5 py-1.5 text-sm text-gray-700">{task.creator.name}</p>
+            </div>
+
+            <div className="mb-4">
+              <label className={fieldLabelClass}>Priority</label>
+              <select
+                value={task.priority}
+                onChange={(e) => onPatch(task.id, { priority: e.target.value })}
+                className={`${sideInputClass} capitalize`}
+              >
+                {PRIORITIES.map((p) => (
+                  <option key={p} value={p} className="capitalize">
+                    {p}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="mb-4">
+              <label className={fieldLabelClass}>Sprint</label>
+              <p className="px-0.5 py-1.5 text-sm text-gray-700">{task.sprint ? task.sprint.name : 'Backlog'}</p>
+            </div>
+
+            <div className="mb-4">
+              <label className={fieldLabelClass}>Story points</label>
+              <input
+                type="number"
+                min={0}
+                defaultValue={task.storyPoints ?? ''}
+                placeholder="—"
+                onBlur={(e) => {
+                  if (e.target.value === '') return;
+                  const value = Number(e.target.value);
+                  if (value !== task.storyPoints) onPatch(task.id, { storyPoints: value });
+                }}
+                className={sideInputClass}
+              />
+            </div>
+
+            <div className="mb-4 flex gap-3">
+              <div className="flex-1">
+                <label className={fieldLabelClass}>Start</label>
+                <input
+                  type="date"
+                  defaultValue={task.startDate ? task.startDate.slice(0, 10) : ''}
+                  onChange={(e) => e.target.value && onPatch(task.id, { startDate: e.target.value })}
+                  className={sideInputClass}
+                />
+              </div>
+              <div className="flex-1">
+                <label className={fieldLabelClass}>Due</label>
+                <input
+                  type="date"
+                  defaultValue={task.dueDate ? task.dueDate.slice(0, 10) : ''}
+                  onChange={(e) => e.target.value && onPatch(task.id, { dueDate: e.target.value })}
+                  className={sideInputClass}
+                />
+              </div>
+            </div>
+
+            {customFields.length > 0 && (
+              <div>
+                <label className={fieldLabelClass}>Labels</label>
+                <div className="flex flex-col gap-3">
+                  {customFields.map((field) => (
+                    <CustomFieldInput
+                      key={field.id}
+                      field={field}
+                      members={members}
+                      value={currentValue(field.id)}
+                      onChange={(value) => saveCustomField(field.id, value)}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -302,7 +398,7 @@ function CustomFieldInput({
   useEffect(() => setLocal(value ?? ''), [value]);
 
   const inputClass =
-    'w-full rounded-md border border-gray-200 px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-teal-600';
+    'w-full rounded-md border border-gray-200 bg-white px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-teal-600';
 
   return (
     <div>

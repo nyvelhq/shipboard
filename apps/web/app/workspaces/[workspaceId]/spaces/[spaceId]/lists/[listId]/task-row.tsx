@@ -72,6 +72,7 @@ export function TaskRow({
         <td className="px-3 py-2" style={{ paddingLeft: isSubtask ? 24 : undefined }}>
           <div className="flex items-center gap-1">
             <input
+              key={task.name}
               defaultValue={task.name}
               onBlur={(e) => {
                 const value = e.target.value.trim();
@@ -133,6 +134,7 @@ export function TaskRow({
         </td>
         <td className="px-3 py-2">
           <input
+            key={task.dueDate ?? ''}
             type="date"
             defaultValue={task.dueDate ? task.dueDate.slice(0, 10) : ''}
             onChange={(e) => e.target.value && onPatch(task.id, { dueDate: e.target.value })}

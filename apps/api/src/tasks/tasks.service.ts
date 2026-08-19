@@ -8,6 +8,7 @@ import { UpdateTaskDto } from './dto/update-task.dto';
 const TASK_INCLUDE = {
   status: true,
   sprint: true,
+  creator: { select: { id: true, name: true, email: true } },
   assignees: { include: { user: { select: { id: true, name: true, email: true } } } },
   customFieldValues: { include: { customField: true } },
 } as const;
