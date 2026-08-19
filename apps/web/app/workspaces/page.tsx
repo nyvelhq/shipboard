@@ -59,7 +59,7 @@ export default function WorkspacesPage() {
   if (!ready || !token) return null;
 
   return (
-    <main className="mx-auto max-w-2xl px-6 py-12">
+    <main className="mx-auto max-w-2xl px-6 py-10">
       <h1 className="mb-6 text-2xl">Your workspaces</h1>
       {loading && (
         <div className="flex flex-col gap-2">

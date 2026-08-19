@@ -33,7 +33,7 @@ export default function LoginPage() {
 
   return (
     <main className="mx-auto mt-16 max-w-sm px-6">
-      <h1 className="mb-1">Shipboard</h1>
+      <h1 className="mb-1 text-2xl">Shipboard</h1>
       <p className="mb-6 text-gray-500">{mode === 'login' ? 'Sign in to your account.' : 'Create an account.'}</p>
 
       <form onSubmit={submit} className="flex flex-col gap-3">

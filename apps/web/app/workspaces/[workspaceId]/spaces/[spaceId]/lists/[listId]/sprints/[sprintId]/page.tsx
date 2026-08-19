@@ -129,7 +129,7 @@ export default function SprintDetailPage() {
       ) : sprint ? (
         <>
           <div className="mb-1 mt-2 flex items-center gap-3">
-            <h1>{sprint.name}</h1>
+            <h1 className="text-2xl">{sprint.name}</h1>
             <span className={`rounded px-2 py-0.5 text-xs font-medium capitalize ${STATUS_STYLES[sprint.status]}`}>
               {sprint.status}
             </span>
@@ -200,7 +200,7 @@ export default function SprintDetailPage() {
                   </div>
                 ))}
                 {sprintTasks.length === 0 && (
-                  <p className="text-sm text-gray-400">No tasks yet — add some from the backlog.</p>
+                  <p className="text-sm text-gray-500">No tasks yet — add some from the backlog.</p>
                 )}
               </div>
             </section>
@@ -222,7 +222,7 @@ export default function SprintDetailPage() {
                     </button>
                   </div>
                 ))}
-                {backlog.length === 0 && <p className="text-sm text-gray-400">Backlog is empty.</p>}
+                {backlog.length === 0 && <p className="text-sm text-gray-500">Backlog is empty.</p>}
               </div>
             </section>
           </div>
