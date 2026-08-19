@@ -9,7 +9,7 @@ export function ViewToggle({
   workspaceId: string;
   spaceId: string;
   listId: string;
-  active: 'list' | 'board' | 'sprints';
+  active: 'list' | 'board' | 'sprints' | 'timeline';
 }) {
   const base = `/workspaces/${workspaceId}/spaces/${spaceId}/lists/${listId}`;
   const tabClass = (tab: typeof active) =>
@@ -18,7 +18,7 @@ export function ViewToggle({
       : 'rounded-md border border-gray-300 px-3 py-1.5 text-gray-700 hover:bg-gray-50';
 
   return (
-    <div className="flex gap-2 text-sm">
+    <div className="flex flex-wrap gap-2 text-sm">
       <Link href={base} className={tabClass('list')}>
         List
       </Link>
@@ -27,6 +27,9 @@ export function ViewToggle({
       </Link>
       <Link href={`${base}/sprints`} className={tabClass('sprints')}>
         Sprints
+      </Link>
+      <Link href={`${base}/timeline`} className={tabClass('timeline')}>
+        Timeline
       </Link>
     </div>
   );

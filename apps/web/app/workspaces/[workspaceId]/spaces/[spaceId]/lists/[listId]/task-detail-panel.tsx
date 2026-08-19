@@ -73,6 +73,16 @@ export function TaskDetailPanel({
     await onPatch(task.id, { description });
   }
 
+  async function saveStartDate(value: string) {
+    if (!value) return;
+    await onPatch(task.id, { startDate: value });
+  }
+
+  async function saveDueDate(value: string) {
+    if (!value) return;
+    await onPatch(task.id, { dueDate: value });
+  }
+
   async function saveCustomField(fieldId: string, value: unknown) {
     await onPatch(task.id, { customFieldValues: { [fieldId]: value } });
   }
@@ -156,6 +166,31 @@ export function TaskDetailPanel({
             placeholder="Add a description…"
             className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-600"
           />
+        </section>
+
+        <section className="mb-6 flex gap-4">
+          <div className="flex-1">
+            <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-500">
+              Start date
+            </label>
+            <input
+              type="date"
+              defaultValue={task.startDate ? task.startDate.slice(0, 10) : ''}
+              onChange={(e) => saveStartDate(e.target.value)}
+              className="w-full rounded-md border border-gray-200 px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-teal-600"
+            />
+          </div>
+          <div className="flex-1">
+            <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-500">
+              Due date
+            </label>
+            <input
+              type="date"
+              defaultValue={task.dueDate ? task.dueDate.slice(0, 10) : ''}
+              onChange={(e) => saveDueDate(e.target.value)}
+              className="w-full rounded-md border border-gray-200 px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-teal-600"
+            />
+          </div>
         </section>
 
         {customFields.length > 0 && (
