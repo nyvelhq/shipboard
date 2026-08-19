@@ -53,7 +53,7 @@ export default function TimelinePage() {
   const params = useParams<{ workspaceId: string; spaceId: string; listId: string }>();
   const { workspaceId, spaceId, listId } = params;
 
-  const { list, tasks, members, customFields, loading, reload } = useListTasks(
+  const { list, tasks, members, customFields, tags, loading, reload } = useListTasks(
     token,
     workspaceId,
     spaceId,
@@ -223,6 +223,7 @@ export default function TimelinePage() {
           statuses={list?.statuses ?? []}
           customFields={customFields}
           members={members}
+          allTags={tags}
           onClose={() => setSelectedTaskId(null)}
           onPatch={patchTask}
         />

@@ -221,7 +221,7 @@ model TaskTag {
   tagId  String @map("tag_id")
 
   task Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
-  tag  Tag  @relation(fields: [tagId], references: [id])
+  tag  Tag  @relation(fields: [tagId], references: [id], onDelete: Cascade)
 
   @@id([taskId, tagId])
   @@map("task_tags")

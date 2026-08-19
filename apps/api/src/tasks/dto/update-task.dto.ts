@@ -31,6 +31,11 @@ export class UpdateTaskDto {
   @IsUUID('4', { each: true })
   assigneeIds?: string[];
 
+  @IsOptional()
+  @IsArray()
+  @IsUUID('4', { each: true })
+  tagIds?: string[];
+
   // Explicit null clears the Task's Sprint (moves it back to the backlog);
   // omitted leaves it unchanged. IsOptional() in class-validator skips
   // validation for both null and undefined, so this is safe as written.

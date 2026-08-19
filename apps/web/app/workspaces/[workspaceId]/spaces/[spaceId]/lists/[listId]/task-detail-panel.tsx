@@ -9,6 +9,7 @@ import {
   CustomField,
   Member,
   Status,
+  Tag,
   Task,
   TaskInput,
   api,
@@ -34,6 +35,7 @@ interface Props {
   statuses: Status[];
   customFields: CustomField[];
   members: Member[];
+  allTags: Tag[];
   onClose: () => void;
   onPatch: (taskId: string, input: TaskInput) => Promise<void>;
 }
@@ -47,6 +49,7 @@ export function TaskDetailPanel({
   statuses,
   customFields,
   members,
+  allTags,
   onClose,
   onPatch,
 }: Props) {
@@ -108,6 +111,12 @@ export function TaskDetailPanel({
 
   async function saveCustomField(fieldId: string, value: unknown) {
     await onPatch(task.id, { customFieldValues: { [fieldId]: value } });
+  }
+
+  async function toggleTag(tagId: string, shouldHaveTag: boolean) {
+    const currentIds = task.tags.map((t) => t.tagId);
+    const nextIds = shouldHaveTag ? [...currentIds, tagId] : currentIds.filter((id) => id !== tagId);
+    await onPatch(task.id, { tagIds: nextIds });
   }
 
   async function submitComment(e: FormEvent) {
@@ -570,9 +579,35 @@ export function TaskDetailPanel({
               </div>
             </div>
 
+            {allTags.length > 0 && (
+              <div className="mb-4">
+                <label className={fieldLabelClass}>Tags</label>
+                <div className="flex flex-wrap gap-1.5">
+                  {allTags.map((tag) => {
+                    const active = task.tags.some((t) => t.tagId === tag.id);
+                    return (
+                      <button
+                        key={tag.id}
+                        type="button"
+                        onClick={() => toggleTag(tag.id, !active)}
+                        className="rounded-full px-2 py-0.5 text-xs font-medium transition-opacity"
+                        style={
+                          active
+                            ? { backgroundColor: tag.color, color: '#fff' }
+                            : { backgroundColor: `${tag.color}1a`, color: tag.color, opacity: 0.55 }
+                        }
+                      >
+                        {tag.name}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
             {customFields.length > 0 && (
               <div>
-                <label className={fieldLabelClass}>Labels</label>
+                <label className={fieldLabelClass}>Custom Fields</label>
                 <div className="flex flex-col gap-3">
                   {customFields.map((field) => (
                     <CustomFieldInput

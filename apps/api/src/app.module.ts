@@ -12,6 +12,7 @@ import { CommentsModule } from './comments/comments.module';
 import { AttachmentsModule } from './attachments/attachments.module';
 import { SprintsModule } from './sprints/sprints.module';
 import { AcceptanceCriteriaModule } from './acceptance-criteria/acceptance-criteria.module';
+import { TagsModule } from './tags/tags.module';
 import { HealthController } from './health.controller';
 
 @Module({
@@ -29,6 +30,7 @@ import { HealthController } from './health.controller';
     AttachmentsModule,
     SprintsModule,
     AcceptanceCriteriaModule,
+    TagsModule,
   ],
   controllers: [HealthController],
 })

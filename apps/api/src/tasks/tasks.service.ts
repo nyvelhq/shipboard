@@ -11,6 +11,7 @@ const TASK_INCLUDE = {
   creator: { select: { id: true, name: true, email: true } },
   assignees: { include: { user: { select: { id: true, name: true, email: true } } } },
   customFieldValues: { include: { customField: true } },
+  tags: { include: { tag: true } },
 } as const;
 
 @Injectable()
@@ -121,6 +122,7 @@ export class TasksService {
     await this.findOne(workspaceId, spaceId, listId, taskId);
     if (dto.statusId) await this.assertStatusBelongsToList(dto.statusId, listId);
     if (dto.assigneeIds) await this.assertAssigneesAreMembers(workspaceId, dto.assigneeIds);
+    if (dto.tagIds) await this.assertTagsInWorkspace(workspaceId, dto.tagIds);
     if (dto.sprintId) await this.assertSprintBelongsToList(dto.sprintId, listId);
     if (dto.customFieldValues) {
       await this.assertCustomFieldsApplicable(workspaceId, spaceId, listId, Object.keys(dto.customFieldValues));
@@ -132,6 +134,14 @@ export class TasksService {
         if (dto.assigneeIds.length) {
           await tx.taskAssignee.createMany({
             data: dto.assigneeIds.map((assigneeId) => ({ taskId, userId: assigneeId })),
+          });
+        }
+      }
+      if (dto.tagIds) {
+        await tx.taskTag.deleteMany({ where: { taskId } });
+        if (dto.tagIds.length) {
+          await tx.taskTag.createMany({
+            data: dto.tagIds.map((tagId) => ({ taskId, tagId })),
           });
         }
       }
@@ -200,6 +210,16 @@ export class TasksService {
     });
     if (count !== uniqueIds.length) {
       throw new BadRequestException('All assignees must be members of this workspace.');
+    }
+  }
+
+  private async assertTagsInWorkspace(workspaceId: string, tagIds: string[]) {
+    const uniqueIds = Array.from(new Set(tagIds));
+    const count = await this.prisma.tag.count({
+      where: { workspaceId, id: { in: uniqueIds } },
+    });
+    if (count !== uniqueIds.length) {
+      throw new BadRequestException('One or more tags do not belong to this workspace.');
     }
   }
 

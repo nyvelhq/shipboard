@@ -122,6 +122,18 @@ export interface AcceptanceCriterion {
   createdAt: string;
 }
 
+export interface Tag {
+  id: string;
+  workspaceId: string;
+  name: string;
+  color: string;
+}
+
+export interface TaskTagEntry {
+  tagId: string;
+  tag: Tag;
+}
+
 export interface Sprint {
   id: string;
   listId: string;
@@ -151,6 +163,7 @@ export interface Task {
   creator: { id: string; name: string; email: string };
   assignees: TaskAssignee[];
   customFieldValues: CustomFieldValue[];
+  tags: TaskTagEntry[];
   subtasks?: Task[];
 }
 
@@ -164,6 +177,7 @@ export interface TaskInput {
   startDate?: string;
   dueDate?: string;
   assigneeIds?: string[];
+  tagIds?: string[];
   customFieldValues?: Record<string, unknown>;
 }
 
@@ -276,6 +290,13 @@ export const api = {
   ) => request<CustomField>(`/workspaces/${workspaceId}/custom-fields`, { method: 'POST', body: JSON.stringify(input) }, token),
   deleteCustomField: (token: string, workspaceId: string, fieldId: string) =>
     request<{ ok: true }>(`/workspaces/${workspaceId}/custom-fields/${fieldId}`, { method: 'DELETE' }, token),
+
+  listTags: (token: string, workspaceId: string) =>
+    request<Tag[]>(`/workspaces/${workspaceId}/tags`, {}, token),
+  createTag: (token: string, workspaceId: string, name: string, color: string) =>
+    request<Tag>(`/workspaces/${workspaceId}/tags`, { method: 'POST', body: JSON.stringify({ name, color }) }, token),
+  deleteTag: (token: string, workspaceId: string, tagId: string) =>
+    request<{ ok: true }>(`/workspaces/${workspaceId}/tags/${tagId}`, { method: 'DELETE' }, token),
 
   listComments: (token: string, workspaceId: string, spaceId: string, listId: string, taskId: string) =>
     request<Comment[]>(

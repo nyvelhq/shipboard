@@ -147,7 +147,20 @@ function BoardCard({
         dragging ? 'rotate-1 opacity-40 shadow-md' : ''
       }`}
     >
-      <p className="mb-2 line-clamp-2 text-sm font-medium leading-snug text-gray-900">{task.name}</p>
+      <p className="mb-1.5 line-clamp-2 text-sm font-medium leading-snug text-gray-900">{task.name}</p>
+      {task.tags.length > 0 && (
+        <div className="mb-2 flex flex-wrap gap-1">
+          {task.tags.map(({ tag }) => (
+            <span
+              key={tag.id}
+              className="rounded-full px-1.5 py-0.5 text-[10px] font-medium"
+              style={{ backgroundColor: `${tag.color}1a`, color: tag.color }}
+            >
+              {tag.name}
+            </span>
+          ))}
+        </div>
+      )}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <PriorityIcon size={13} className={priority.color} aria-label={priority.label} />

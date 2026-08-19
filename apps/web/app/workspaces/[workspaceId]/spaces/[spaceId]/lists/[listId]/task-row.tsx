@@ -133,6 +133,19 @@ export function TaskRow({
           </select>
         </td>
         <td className="px-3 py-2">
+          <div className="flex flex-wrap gap-1">
+            {task.tags.map(({ tag }) => (
+              <span
+                key={tag.id}
+                className="rounded-full px-1.5 py-0.5 text-[10px] font-medium"
+                style={{ backgroundColor: `${tag.color}1a`, color: tag.color }}
+              >
+                {tag.name}
+              </span>
+            ))}
+          </div>
+        </td>
+        <td className="px-3 py-2">
           <input
             key={task.dueDate ?? ''}
             type="date"

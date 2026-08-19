@@ -10,6 +10,7 @@ import { Skeleton } from '@/components/skeleton';
 import { TaskRow } from './task-row';
 import { ViewToggle } from './view-toggle';
 import { CustomFieldsManager } from './custom-fields-manager';
+import { TagsManager } from './tags-manager';
 import { TaskDetailPanel } from './task-detail-panel';
 
 function findTask(tasks: Task[], taskId: string): Task | undefined {
@@ -28,7 +29,7 @@ export default function ListDetailPage() {
   const params = useParams<{ workspaceId: string; spaceId: string; listId: string }>();
   const { workspaceId, spaceId, listId } = params;
 
-  const { list, tasks, members, customFields, loading, error, setError, reload } = useListTasks(
+  const { list, tasks, members, customFields, tags, loading, error, setError, reload } = useListTasks(
     token,
     workspaceId,
     spaceId,
@@ -113,13 +114,16 @@ export default function ListDetailPage() {
         <ViewToggle workspaceId={workspaceId} spaceId={spaceId} listId={listId} active="list" />
       </div>
 
-      <CustomFieldsManager
-        token={token}
-        workspaceId={workspaceId}
-        listId={listId}
-        fields={customFields}
-        onChanged={reload}
-      />
+      <div className="mb-2 flex flex-wrap gap-4">
+        <CustomFieldsManager
+          token={token}
+          workspaceId={workspaceId}
+          listId={listId}
+          fields={customFields}
+          onChanged={reload}
+        />
+        <TagsManager token={token} workspaceId={workspaceId} tags={tags} onChanged={reload} />
+      </div>
 
       {error && <p className="mb-4 text-red-600">{error}</p>}
 
@@ -161,6 +165,7 @@ export default function ListDetailPage() {
                 <th className="px-3 py-2">Status</th>
                 <th className="px-3 py-2">Priority</th>
                 <th className="px-3 py-2">Assignee</th>
+                <th className="px-3 py-2">Tags</th>
                 <th className="px-3 py-2">Due</th>
                 <th className="w-8 px-3 py-2" />
               </tr>
@@ -199,6 +204,7 @@ export default function ListDetailPage() {
           statuses={list?.statuses ?? []}
           customFields={customFields}
           members={members}
+          allTags={tags}
           onClose={() => setSelectedTaskId(null)}
           onPatch={patchTask}
         />

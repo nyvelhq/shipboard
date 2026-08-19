@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { api, ApiError, CustomField, ListItem, Member, Task } from './api';
+import { api, ApiError, CustomField, ListItem, Member, Tag, Task } from './api';
 import { getSocket } from './socket';
 
 // Shared by the List and Board views: fetches a List's Tasks + members over
@@ -16,6 +16,7 @@ export function useListTasks(token: string | null, workspaceId: string, spaceId:
   const [tasks, setTasks] = useState<Task[]>([]);
   const [members, setMembers] = useState<Member[]>([]);
   const [customFields, setCustomFields] = useState<CustomField[]>([]);
+  const [tags, setTags] = useState<Tag[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -23,16 +24,18 @@ export function useListTasks(token: string | null, workspaceId: string, spaceId:
     if (!token) return;
     setError('');
     try {
-      const [listData, taskData, memberData, fieldData] = await Promise.all([
+      const [listData, taskData, memberData, fieldData, tagData] = await Promise.all([
         api.getList(token, workspaceId, spaceId, listId),
         api.listTasks(token, workspaceId, spaceId, listId),
         api.listMembers(token, workspaceId),
         api.listCustomFields(token, workspaceId, spaceId, listId),
+        api.listTags(token, workspaceId),
       ]);
       setList(listData);
       setTasks(taskData);
       setMembers(memberData);
       setCustomFields(fieldData);
+      setTags(tagData);
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Failed to load list.');
     } finally {
@@ -61,5 +64,5 @@ export function useListTasks(token: string | null, workspaceId: string, spaceId:
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token, listId]);
 
-  return { list, tasks, members, customFields, loading, error, setError, reload: load };
+  return { list, tasks, members, customFields, tags, loading, error, setError, reload: load };
 }
