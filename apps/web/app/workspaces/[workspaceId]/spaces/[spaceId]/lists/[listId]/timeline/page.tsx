@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { Task, api } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { useListTasks } from '@/lib/use-list-tasks';
+import { Skeleton } from '@/components/skeleton';
 import { ViewToggle } from '../view-toggle';
 import { TaskDetailPanel } from '../task-detail-panel';
 
@@ -105,6 +106,8 @@ export default function TimelinePage() {
         <h1 className="text-2xl">{loading ? 'Loading…' : list?.name}</h1>
         <ViewToggle workspaceId={workspaceId} spaceId={spaceId} listId={listId} active="timeline" />
       </div>
+
+      {loading && <Skeleton className="h-72 w-full" />}
 
       {!loading && dated.length === 0 && (
         <p className="mb-4 text-sm text-gray-500">

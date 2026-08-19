@@ -14,6 +14,7 @@ import {
   ApiError,
   API_URL,
 } from '@/lib/api';
+import { useToast } from '@/components/toast/toast-context';
 
 const PRIORITIES = ['urgent', 'high', 'normal', 'low'];
 
@@ -42,6 +43,7 @@ export function TaskDetailPanel({
   onClose,
   onPatch,
 }: Props) {
+  const toast = useToast();
   const [title, setTitle] = useState(task.name);
   const [description, setDescription] = useState(task.description ?? '');
   const [comments, setComments] = useState<Comment[]>([]);
@@ -126,8 +128,11 @@ export function TaskDetailPanel({
     try {
       await api.uploadAttachment(token, workspaceId, spaceId, listId, task.id, file);
       await load();
+      toast.success('Attachment uploaded.');
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Upload failed.');
+      const message = err instanceof ApiError ? err.message : 'Upload failed.';
+      setError(message);
+      toast.error(message);
     } finally {
       setUploading(false);
       e.target.value = '';
@@ -140,7 +145,9 @@ export function TaskDetailPanel({
       await api.deleteAttachment(token, workspaceId, spaceId, listId, task.id, attachmentId);
       await load();
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Failed to delete attachment.');
+      const message = err instanceof ApiError ? err.message : 'Failed to delete attachment.';
+      setError(message);
+      toast.error(message);
     }
   }
 

@@ -5,6 +5,8 @@ import { useParams, useRouter } from 'next/navigation';
 import { ApiError, Task, TaskInput, api } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { useListTasks } from '@/lib/use-list-tasks';
+import { useToast } from '@/components/toast/toast-context';
+import { Skeleton } from '@/components/skeleton';
 import { TaskRow } from './task-row';
 import { ViewToggle } from './view-toggle';
 import { CustomFieldsManager } from './custom-fields-manager';
@@ -22,6 +24,7 @@ function findTask(tasks: Task[], taskId: string): Task | undefined {
 export default function ListDetailPage() {
   const { token, ready } = useAuth();
   const router = useRouter();
+  const toast = useToast();
   const params = useParams<{ workspaceId: string; spaceId: string; listId: string }>();
   const { workspaceId, spaceId, listId } = params;
 
@@ -77,8 +80,11 @@ export default function ListDetailPage() {
       await api.deleteTask(token, workspaceId, spaceId, listId, taskId);
       if (selectedTaskId === taskId) setSelectedTaskId(null);
       await reload();
+      toast.success('Task deleted.');
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Failed to delete task.');
+      const message = err instanceof ApiError ? err.message : 'Failed to delete task.';
+      setError(message);
+      toast.error(message);
     }
   }
 
@@ -132,6 +138,14 @@ export default function ListDetailPage() {
           {creating ? 'Adding…' : 'Add task'}
         </button>
       </form>
+
+      {loading && (
+        <div className="flex flex-col gap-2">
+          {[0, 1, 2].map((i) => (
+            <Skeleton key={i} className="h-10 w-full" />
+          ))}
+        </div>
+      )}
 
       {!loading && tasks.length === 0 && (
         <p className="text-gray-500">No tasks yet — add your first one above.</p>

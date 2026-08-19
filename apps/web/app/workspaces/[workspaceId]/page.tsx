@@ -5,6 +5,8 @@ import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { api, ApiError, ListItem, Space } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
+import { useToast } from '@/components/toast/toast-context';
+import { Skeleton } from '@/components/skeleton';
 
 interface SpaceWithLists extends Space {
   lists: ListItem[];
@@ -13,6 +15,7 @@ interface SpaceWithLists extends Space {
 export default function WorkspaceDetailPage() {
   const { token, ready } = useAuth();
   const router = useRouter();
+  const toast = useToast();
   const params = useParams<{ workspaceId: string }>();
   const workspaceId = params.workspaceId;
 
@@ -67,6 +70,7 @@ export default function WorkspaceDetailPage() {
       await api.createSpace(token, workspaceId, newSpaceName.trim());
       setNewSpaceName('');
       await load(token);
+      toast.success('Space created.');
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Failed to create Space.');
     } finally {
@@ -83,6 +87,7 @@ export default function WorkspaceDetailPage() {
       await api.createList(token, workspaceId, spaceId, name);
       setNewListNameBySpace((prev) => ({ ...prev, [spaceId]: '' }));
       await load(token);
+      toast.success('List created.');
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Failed to create List.');
     } finally {
@@ -97,6 +102,14 @@ export default function WorkspaceDetailPage() {
       <h1 className="mb-6 text-2xl">{loading ? 'Loading…' : workspaceName}</h1>
 
       {error && <p className="text-red-600">{error}</p>}
+
+      {loading && (
+        <div className="flex flex-col gap-3">
+          <Skeleton className="h-24 w-full" />
+          <Skeleton className="h-24 w-full" />
+        </div>
+      )}
+
       {!loading && spaces.length === 0 && (
         <p className="text-gray-500">No Spaces yet — create your first one below.</p>
       )}

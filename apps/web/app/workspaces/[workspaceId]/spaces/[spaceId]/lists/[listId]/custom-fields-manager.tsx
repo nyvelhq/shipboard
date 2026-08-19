@@ -2,6 +2,7 @@
 
 import { FormEvent, useState } from 'react';
 import { CustomField, ApiError, api } from '@/lib/api';
+import { useToast } from '@/components/toast/toast-context';
 
 const FIELD_TYPES = ['text', 'number', 'currency', 'dropdown', 'multiselect', 'date', 'checkbox', 'person'];
 
@@ -18,6 +19,7 @@ export function CustomFieldsManager({
   fields: CustomField[];
   onChanged: () => void;
 }) {
+  const toast = useToast();
   const [open, setOpen] = useState(false);
   const [name, setName] = useState('');
   const [type, setType] = useState('text');
@@ -43,6 +45,7 @@ export function CustomFieldsManager({
       setName('');
       setOptions('');
       onChanged();
+      toast.success('Custom field created.');
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Failed to create field.');
     } finally {
@@ -55,6 +58,7 @@ export function CustomFieldsManager({
     try {
       await api.deleteCustomField(token, workspaceId, fieldId);
       onChanged();
+      toast.success('Custom field deleted.');
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Failed to delete field.');
     }

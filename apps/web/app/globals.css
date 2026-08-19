@@ -18,4 +18,8 @@
   button:disabled {
     @apply opacity-60 cursor-not-allowed;
   }
+  a:focus-visible,
+  button:focus-visible {
+    @apply rounded-sm outline-none ring-2 ring-teal-600 ring-offset-2;
+  }
 }

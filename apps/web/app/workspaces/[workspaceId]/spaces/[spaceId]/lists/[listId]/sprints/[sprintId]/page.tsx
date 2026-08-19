@@ -5,6 +5,8 @@ import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ApiError, Sprint, Task, api } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
+import { useToast } from '@/components/toast/toast-context';
+import { Skeleton } from '@/components/skeleton';
 
 const STATUS_STYLES: Record<string, string> = {
   planned: 'bg-gray-100 text-gray-600',
@@ -15,6 +17,7 @@ const STATUS_STYLES: Record<string, string> = {
 export default function SprintDetailPage() {
   const { token, ready } = useAuth();
   const router = useRouter();
+  const toast = useToast();
   const params = useParams<{ workspaceId: string; spaceId: string; listId: string; sprintId: string }>();
   const { workspaceId, spaceId, listId, sprintId } = params;
 
@@ -89,6 +92,7 @@ export default function SprintDetailPage() {
     try {
       await api.updateSprint(token, workspaceId, spaceId, listId, sprintId, { status });
       await load(token);
+      toast.success(status === 'active' ? 'Sprint started.' : 'Sprint closed.');
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Failed to update sprint status.');
     }
@@ -114,7 +118,14 @@ export default function SprintDetailPage() {
       {error && <p className="mb-4 mt-3 text-red-600">{error}</p>}
 
       {loading ? (
-        <p className="mt-3">Loading…</p>
+        <div className="mt-3 flex flex-col gap-3">
+          <Skeleton className="h-8 w-64" />
+          <Skeleton className="h-9 w-40" />
+          <div className="mt-3 grid grid-cols-1 gap-6 md:grid-cols-2">
+            <Skeleton className="h-40 w-full" />
+            <Skeleton className="h-40 w-full" />
+          </div>
+        </div>
       ) : sprint ? (
         <>
           <div className="mb-1 mt-2 flex items-center gap-3">

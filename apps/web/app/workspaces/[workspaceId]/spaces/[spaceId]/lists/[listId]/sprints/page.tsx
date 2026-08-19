@@ -5,6 +5,8 @@ import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ApiError, Sprint, api } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
+import { useToast } from '@/components/toast/toast-context';
+import { Skeleton } from '@/components/skeleton';
 import { ViewToggle } from '../view-toggle';
 
 const STATUS_STYLES: Record<string, string> = {
@@ -16,6 +18,7 @@ const STATUS_STYLES: Record<string, string> = {
 export default function SprintsPage() {
   const { token, ready } = useAuth();
   const router = useRouter();
+  const toast = useToast();
   const params = useParams<{ workspaceId: string; spaceId: string; listId: string }>();
   const { workspaceId, spaceId, listId } = params;
 
@@ -67,6 +70,7 @@ export default function SprintsPage() {
       setStartDate('');
       setEndDate('');
       await load(token);
+      toast.success('Sprint created.');
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Failed to create sprint.');
     } finally {
@@ -84,6 +88,14 @@ export default function SprintsPage() {
       </div>
 
       {error && <p className="mb-4 text-red-600">{error}</p>}
+
+      {loading && (
+        <div className="mb-8 flex flex-col gap-2">
+          {[0, 1].map((i) => (
+            <Skeleton key={i} className="h-16 w-full" />
+          ))}
+        </div>
+      )}
 
       {!loading && sprints.length === 0 && (
         <p className="mb-6 text-gray-500">No sprints yet — create your first one below.</p>

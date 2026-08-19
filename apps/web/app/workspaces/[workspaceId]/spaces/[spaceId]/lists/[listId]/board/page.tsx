@@ -6,6 +6,8 @@ import { AlertTriangle, ArrowDown, ArrowUp, LucideIcon, Minus } from 'lucide-rea
 import { ApiError, Task, api } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { useListTasks } from '@/lib/use-list-tasks';
+import { useToast } from '@/components/toast/toast-context';
+import { Skeleton } from '@/components/skeleton';
 import { ViewToggle } from '../view-toggle';
 
 const PRIORITY_CONFIG: Record<string, { icon: LucideIcon; color: string; label: string }> = {
@@ -18,6 +20,7 @@ const PRIORITY_CONFIG: Record<string, { icon: LucideIcon; color: string; label: 
 export default function BoardPage() {
   const { token, ready } = useAuth();
   const router = useRouter();
+  const toast = useToast();
   const params = useParams<{ workspaceId: string; spaceId: string; listId: string }>();
   const { workspaceId, spaceId, listId } = params;
 
@@ -37,7 +40,9 @@ export default function BoardPage() {
       await api.updateTask(token, workspaceId, spaceId, listId, taskId, { statusId });
       await reload();
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Failed to move task.');
+      const message = err instanceof ApiError ? err.message : 'Failed to move task.';
+      setError(message);
+      toast.error(message);
     }
   }
 
@@ -54,8 +59,16 @@ export default function BoardPage() {
 
       {error && <p className="mb-4 text-red-600">{error}</p>}
 
+      {loading && (
+        <div className="flex gap-4 overflow-x-auto pb-4">
+          {[0, 1, 2, 3].map((i) => (
+            <Skeleton key={i} className="h-64 w-72 shrink-0" />
+          ))}
+        </div>
+      )}
+
       <div className="flex gap-4 overflow-x-auto pb-4">
-        {statuses.map((status) => {
+        {!loading && statuses.map((status) => {
           const columnTasks = tasks.filter((t) => t.statusId === status.id);
           const isDropTarget = dragOverStatusId === status.id;
           return (

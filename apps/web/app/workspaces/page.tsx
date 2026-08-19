@@ -5,10 +5,13 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { api, ApiError, Workspace } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
+import { useToast } from '@/components/toast/toast-context';
+import { Skeleton } from '@/components/skeleton';
 
 export default function WorkspacesPage() {
   const { token, ready } = useAuth();
   const router = useRouter();
+  const toast = useToast();
   const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -45,6 +48,7 @@ export default function WorkspacesPage() {
       await api.createWorkspace(token, newName.trim());
       setNewName('');
       await load(token);
+      toast.success('Workspace created.');
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Failed to create workspace.');
     } finally {
@@ -57,7 +61,12 @@ export default function WorkspacesPage() {
   return (
     <main className="mx-auto max-w-2xl px-6 py-12">
       <h1 className="mb-6 text-2xl">Your workspaces</h1>
-      {loading && <p>Loading…</p>}
+      {loading && (
+        <div className="flex flex-col gap-2">
+          <Skeleton className="h-12 w-full" />
+          <Skeleton className="h-12 w-full" />
+        </div>
+      )}
       {error && <p className="text-red-600">{error}</p>}
       {!loading && workspaces.length === 0 && (
         <p className="text-gray-500">No workspaces yet — create your first one below.</p>
