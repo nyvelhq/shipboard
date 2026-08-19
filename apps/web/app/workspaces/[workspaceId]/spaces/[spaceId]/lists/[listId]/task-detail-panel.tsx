@@ -3,6 +3,7 @@
 import { ChangeEvent, ClipboardEvent, FormEvent, useEffect, useState } from 'react';
 import { Link2, Paperclip, X } from 'lucide-react';
 import {
+  AcceptanceCriterion,
   Attachment,
   Comment,
   CustomField,
@@ -54,6 +55,7 @@ export function TaskDetailPanel({
   const [description, setDescription] = useState(task.description ?? '');
   const [comments, setComments] = useState<Comment[]>([]);
   const [attachments, setAttachments] = useState<Attachment[]>([]);
+  const [criteria, setCriteria] = useState<AcceptanceCriterion[]>([]);
   const [newComment, setNewComment] = useState('');
   const [postingComment, setPostingComment] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -61,6 +63,8 @@ export function TaskDetailPanel({
   const [linkUrl, setLinkUrl] = useState('');
   const [linkLabel, setLinkLabel] = useState('');
   const [submittingLink, setSubmittingLink] = useState(false);
+  const [newCriterion, setNewCriterion] = useState('');
+  const [addingCriterion, setAddingCriterion] = useState(false);
   const [error, setError] = useState('');
 
   useEffect(() => {
@@ -71,12 +75,14 @@ export function TaskDetailPanel({
   async function load() {
     setError('');
     try {
-      const [commentData, attachmentData] = await Promise.all([
+      const [commentData, attachmentData, criteriaData] = await Promise.all([
         api.listComments(token, workspaceId, spaceId, listId, task.id),
         api.listAttachments(token, workspaceId, spaceId, listId, task.id),
+        api.listAcceptanceCriteria(token, workspaceId, spaceId, listId, task.id),
       ]);
       setComments(commentData);
       setAttachments(attachmentData);
+      setCriteria(criteriaData);
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Failed to load task details.');
     }
@@ -197,6 +203,48 @@ export function TaskDetailPanel({
     }
   }
 
+  async function submitCriterion(e: FormEvent) {
+    e.preventDefault();
+    if (!newCriterion.trim()) return;
+    setAddingCriterion(true);
+    setError('');
+    try {
+      await api.createAcceptanceCriterion(token, workspaceId, spaceId, listId, task.id, newCriterion.trim());
+      setNewCriterion('');
+      await load();
+    } catch (err) {
+      const message = err instanceof ApiError ? err.message : 'Failed to add criterion.';
+      setError(message);
+      toast.error(message);
+    } finally {
+      setAddingCriterion(false);
+    }
+  }
+
+  async function toggleCriterion(criterionId: string, completed: boolean) {
+    setError('');
+    try {
+      await api.updateAcceptanceCriterion(token, workspaceId, spaceId, listId, task.id, criterionId, { completed });
+      await load();
+    } catch (err) {
+      const message = err instanceof ApiError ? err.message : 'Failed to update criterion.';
+      setError(message);
+      toast.error(message);
+    }
+  }
+
+  async function removeCriterion(criterionId: string) {
+    setError('');
+    try {
+      await api.deleteAcceptanceCriterion(token, workspaceId, spaceId, listId, task.id, criterionId);
+      await load();
+    } catch (err) {
+      const message = err instanceof ApiError ? err.message : 'Failed to delete criterion.';
+      setError(message);
+      toast.error(message);
+    }
+  }
+
   const fieldLabelClass = 'mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-500';
   const sideInputClass =
     'w-full rounded-md border border-gray-200 bg-white px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-teal-600';
@@ -255,6 +303,58 @@ export function TaskDetailPanel({
                 placeholder="Add a description…"
                 className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-600"
               />
+            </section>
+
+            <section className="mb-6">
+              <div className="mb-2 flex items-center justify-between">
+                <h3 className={fieldLabelClass}>Acceptance Criteria</h3>
+                {criteria.length > 0 && (
+                  <span className="text-xs text-gray-400">
+                    {criteria.filter((c) => c.completed).length}/{criteria.length}
+                  </span>
+                )}
+              </div>
+              <div className="flex flex-col gap-1">
+                {criteria.map((c) => (
+                  <div key={c.id} className="group flex items-start gap-2 rounded px-1 py-1 hover:bg-gray-50">
+                    <input
+                      type="checkbox"
+                      checked={c.completed}
+                      onChange={(e) => toggleCriterion(c.id, e.target.checked)}
+                      className="mt-0.5 h-4 w-4 shrink-0 rounded border-gray-300 text-teal-600 focus:outline-none focus:ring-2 focus:ring-teal-600"
+                    />
+                    <span
+                      className={`flex-1 text-sm ${c.completed ? 'text-gray-400 line-through' : 'text-gray-800'}`}
+                    >
+                      {c.text}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => removeCriterion(c.id)}
+                      className="shrink-0 text-gray-300 opacity-0 hover:text-red-600 group-hover:opacity-100"
+                      aria-label="Remove criterion"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                ))}
+                {criteria.length === 0 && <p className="px-1 text-sm text-gray-400">No acceptance criteria yet.</p>}
+              </div>
+              <form onSubmit={submitCriterion} className="mt-2 flex gap-2">
+                <input
+                  value={newCriterion}
+                  onChange={(e) => setNewCriterion(e.target.value)}
+                  placeholder="Add a criterion…"
+                  className="flex-1 rounded-md border border-gray-200 px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-teal-600"
+                />
+                <button
+                  type="submit"
+                  disabled={addingCriterion}
+                  className="rounded-md bg-gray-900 px-3 py-1.5 text-sm font-semibold text-white hover:bg-gray-800"
+                >
+                  Add
+                </button>
+              </form>
             </section>
 
             <section className="mb-6">

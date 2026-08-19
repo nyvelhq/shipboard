@@ -113,6 +113,15 @@ export interface Attachment {
   uploader: { id: string; name: string; email: string };
 }
 
+export interface AcceptanceCriterion {
+  id: string;
+  taskId: string;
+  text: string;
+  completed: boolean;
+  position: number;
+  createdAt: string;
+}
+
 export interface Sprint {
   id: string;
   listId: string;
@@ -373,6 +382,53 @@ export const api = {
   deleteSprint: (token: string, workspaceId: string, spaceId: string, listId: string, sprintId: string) =>
     request<{ ok: true }>(
       `/workspaces/${workspaceId}/spaces/${spaceId}/lists/${listId}/sprints/${sprintId}`,
+      { method: 'DELETE' },
+      token,
+    ),
+
+  listAcceptanceCriteria: (token: string, workspaceId: string, spaceId: string, listId: string, taskId: string) =>
+    request<AcceptanceCriterion[]>(
+      `/workspaces/${workspaceId}/spaces/${spaceId}/lists/${listId}/tasks/${taskId}/acceptance-criteria`,
+      {},
+      token,
+    ),
+  createAcceptanceCriterion: (
+    token: string,
+    workspaceId: string,
+    spaceId: string,
+    listId: string,
+    taskId: string,
+    text: string,
+  ) =>
+    request<AcceptanceCriterion>(
+      `/workspaces/${workspaceId}/spaces/${spaceId}/lists/${listId}/tasks/${taskId}/acceptance-criteria`,
+      { method: 'POST', body: JSON.stringify({ text }) },
+      token,
+    ),
+  updateAcceptanceCriterion: (
+    token: string,
+    workspaceId: string,
+    spaceId: string,
+    listId: string,
+    taskId: string,
+    criterionId: string,
+    input: { text?: string; completed?: boolean },
+  ) =>
+    request<AcceptanceCriterion>(
+      `/workspaces/${workspaceId}/spaces/${spaceId}/lists/${listId}/tasks/${taskId}/acceptance-criteria/${criterionId}`,
+      { method: 'PATCH', body: JSON.stringify(input) },
+      token,
+    ),
+  deleteAcceptanceCriterion: (
+    token: string,
+    workspaceId: string,
+    spaceId: string,
+    listId: string,
+    taskId: string,
+    criterionId: string,
+  ) =>
+    request<{ ok: true }>(
+      `/workspaces/${workspaceId}/spaces/${spaceId}/lists/${listId}/tasks/${taskId}/acceptance-criteria/${criterionId}`,
       { method: 'DELETE' },
       token,
     ),

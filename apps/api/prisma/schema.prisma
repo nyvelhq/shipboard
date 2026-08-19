@@ -169,14 +169,15 @@ model Task {
   status   Status  @relation(fields: [statusId], references: [id])
   creator  User    @relation("TaskCreatedBy", fields: [createdBy], references: [id])
 
-  assignees         TaskAssignee[]
-  blockingLinks     TaskDependency[]   @relation("BlockingTask")
-  blockedLinks      TaskDependency[]   @relation("BlockedTask")
-  tags              TaskTag[]
-  customFieldValues CustomFieldValue[]
-  comments          Comment[]
-  attachments       Attachment[]
-  activity          ActivityLog[]
+  assignees          TaskAssignee[]
+  blockingLinks      TaskDependency[]       @relation("BlockingTask")
+  blockedLinks       TaskDependency[]       @relation("BlockedTask")
+  tags               TaskTag[]
+  customFieldValues  CustomFieldValue[]
+  comments           Comment[]
+  attachments        Attachment[]
+  acceptanceCriteria AcceptanceCriterion[]
+  activity           ActivityLog[]
 
   @@map("tasks")
 }
@@ -272,6 +273,19 @@ model Comment {
   user User @relation(fields: [userId], references: [id])
 
   @@map("comments")
+}
+
+model AcceptanceCriterion {
+  id        String   @id @default(uuid())
+  taskId    String   @map("task_id")
+  text      String
+  completed Boolean  @default(false)
+  position  Int
+  createdAt DateTime @default(now()) @map("created_at")
+
+  task Task @relation(fields: [taskId], references: [id])
+
+  @@map("acceptance_criteria")
 }
 
 model Attachment {
