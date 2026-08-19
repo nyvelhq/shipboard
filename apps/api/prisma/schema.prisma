@@ -1,0 +1,300 @@
+// Shipboard — Prisma schema
+// Transcribed 1:1 from the PRD's Database Schema Design section.
+// See HANDOFF.md and the published PRD artifact for the reasoning behind each table.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------- Identity & workspace membership ----------
+
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  name         String
+  avatarUrl    String?  @map("avatar_url")
+  authProvider String   @map("auth_provider") // 'password' | 'google' | 'microsoft'
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  ownedWorkspaces Workspace[]       @relation("WorkspaceOwner")
+  memberships     WorkspaceMember[]
+  createdTasks    Task[]            @relation("TaskCreatedBy")
+  assignedTasks   TaskAssignee[]
+  comments        Comment[]
+  attachments     Attachment[]
+  activity        ActivityLog[]
+
+  @@map("users")
+}
+
+model Workspace {
+  id        String   @id @default(uuid())
+  name      String
+  slug      String   @unique
+  ownerId   String   @map("owner_id")
+  plan      String   @default("trial")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  owner        User              @relation("WorkspaceOwner", fields: [ownerId], references: [id])
+  members      WorkspaceMember[]
+  spaces       Space[]
+  tags         Tag[]
+  customFields CustomField[]
+
+  @@map("workspaces")
+}
+
+model WorkspaceMember {
+  workspaceId String   @map("workspace_id")
+  userId      String   @map("user_id")
+  role        String // 'owner' | 'admin' | 'member' | 'guest'
+  joinedAt    DateTime @default(now()) @map("joined_at")
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id])
+  user      User      @relation(fields: [userId], references: [id])
+
+  @@id([workspaceId, userId])
+  @@map("workspace_members")
+}
+
+// ---------- Hierarchy: Workspace -> Space -> Folder -> List ----------
+
+model Space {
+  id          String @id @default(uuid())
+  workspaceId String @map("workspace_id")
+  name        String
+  icon        String?
+  position    Int
+
+  workspace    Workspace     @relation(fields: [workspaceId], references: [id])
+  folders      Folder[]
+  lists        List[]
+  customFields CustomField[]
+
+  @@map("spaces")
+}
+
+model Folder {
+  id       String @id @default(uuid())
+  spaceId  String @map("space_id")
+  name     String
+  position Int
+
+  space Space  @relation(fields: [spaceId], references: [id])
+  lists List[]
+
+  @@map("folders")
+}
+
+model List {
+  id       String  @id @default(uuid())
+  spaceId  String  @map("space_id")
+  folderId String? @map("folder_id")
+  name     String
+  type     String  @default("list") // 'list' | 'sprint_board'
+  position Int
+
+  space        Space         @relation(fields: [spaceId], references: [id])
+  folder       Folder?       @relation(fields: [folderId], references: [id])
+  statuses     Status[]
+  tasks        Task[]
+  sprints      Sprint[]
+  customFields CustomField[]
+
+  @@map("lists")
+}
+
+model Status {
+  id       String @id @default(uuid())
+  listId   String @map("list_id")
+  name     String
+  color    String
+  category String // 'todo' | 'in_progress' | 'done'
+  position Int
+
+  list  List   @relation(fields: [listId], references: [id])
+  tasks Task[]
+
+  @@map("statuses")
+}
+
+// ---------- Work items ----------
+
+model Sprint {
+  id        String   @id @default(uuid())
+  listId    String   @map("list_id")
+  name      String
+  goal      String?
+  startDate DateTime @map("start_date") @db.Date
+  endDate   DateTime @map("end_date") @db.Date
+  status    String   @default("planned") // 'planned' | 'active' | 'closed'
+
+  list  List   @relation(fields: [listId], references: [id])
+  tasks Task[]
+
+  @@map("sprints")
+}
+
+model Task {
+  id           String    @id @default(uuid())
+  listId       String    @map("list_id")
+  parentTaskId String?   @map("parent_task_id") // subtasks (1 level)
+  sprintId     String?   @map("sprint_id")
+  statusId     String    @map("status_id")
+  name         String
+  description  String?
+  priority     String    @default("normal") // 'urgent' | 'high' | 'normal' | 'low'
+  storyPoints  Int?      @map("story_points")
+  startDate    DateTime? @map("start_date") @db.Date
+  dueDate      DateTime? @map("due_date") @db.Date
+  position     Int
+  createdBy    String    @map("created_by")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+
+  list     List    @relation(fields: [listId], references: [id])
+  parent   Task?   @relation("Subtasks", fields: [parentTaskId], references: [id])
+  subtasks Task[]  @relation("Subtasks")
+  sprint   Sprint? @relation(fields: [sprintId], references: [id])
+  status   Status  @relation(fields: [statusId], references: [id])
+  creator  User    @relation("TaskCreatedBy", fields: [createdBy], references: [id])
+
+  assignees         TaskAssignee[]
+  blockingLinks     TaskDependency[]   @relation("BlockingTask")
+  blockedLinks      TaskDependency[]   @relation("BlockedTask")
+  tags              TaskTag[]
+  customFieldValues CustomFieldValue[]
+  comments          Comment[]
+  attachments       Attachment[]
+  activity          ActivityLog[]
+
+  @@map("tasks")
+}
+
+model TaskAssignee {
+  taskId String @map("task_id")
+  userId String @map("user_id")
+
+  task Task @relation(fields: [taskId], references: [id])
+  user User @relation(fields: [userId], references: [id])
+
+  @@id([taskId, userId])
+  @@map("task_assignees")
+}
+
+model TaskDependency {
+  id             String @id @default(uuid())
+  blockingTaskId String @map("blocking_task_id")
+  blockedTaskId  String @map("blocked_task_id")
+
+  blockingTask Task @relation("BlockingTask", fields: [blockingTaskId], references: [id])
+  blockedTask  Task @relation("BlockedTask", fields: [blockedTaskId], references: [id])
+
+  @@map("task_dependencies")
+}
+
+model Tag {
+  id          String @id @default(uuid())
+  workspaceId String @map("workspace_id")
+  name        String
+  color       String
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id])
+  tasks     TaskTag[]
+
+  @@map("tags")
+}
+
+model TaskTag {
+  taskId String @map("task_id")
+  tagId  String @map("tag_id")
+
+  task Task @relation(fields: [taskId], references: [id])
+  tag  Tag  @relation(fields: [tagId], references: [id])
+
+  @@id([taskId, tagId])
+  @@map("task_tags")
+}
+
+// ---------- Custom fields (generic — no schema migration per new metric) ----------
+
+model CustomField {
+  id          String  @id @default(uuid())
+  workspaceId String  @map("workspace_id")
+  spaceId     String? @map("space_id") // NULL = workspace-wide
+  listId      String? @map("list_id") // overrides scope for one List
+  name        String
+  type        String // 'text' | 'number' | 'currency' | 'dropdown' | 'multiselect' | 'date' | 'checkbox' | 'person'
+  options     Json? // dropdown / multiselect choices
+
+  workspace Workspace          @relation(fields: [workspaceId], references: [id])
+  space     Space?             @relation(fields: [spaceId], references: [id])
+  list      List?              @relation(fields: [listId], references: [id])
+  values    CustomFieldValue[]
+
+  @@map("custom_fields")
+}
+
+model CustomFieldValue {
+  id            String @id @default(uuid())
+  taskId        String @map("task_id")
+  customFieldId String @map("custom_field_id")
+  value         Json
+
+  task        Task        @relation(fields: [taskId], references: [id])
+  customField CustomField @relation(fields: [customFieldId], references: [id])
+
+  @@unique([taskId, customFieldId])
+  @@map("custom_field_values")
+}
+
+// ---------- Collaboration & audit trail ----------
+
+model Comment {
+  id        String    @id @default(uuid())
+  taskId    String    @map("task_id")
+  userId    String    @map("user_id")
+  body      String
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime? @map("updated_at")
+
+  task Task @relation(fields: [taskId], references: [id])
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("comments")
+}
+
+model Attachment {
+  id         String   @id @default(uuid())
+  taskId     String   @map("task_id")
+  uploadedBy String   @map("uploaded_by")
+  url        String
+  filename   String
+  sizeBytes  BigInt   @map("size_bytes")
+  mimeType   String   @map("mime_type")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  task     Task @relation(fields: [taskId], references: [id])
+  uploader User @relation(fields: [uploadedBy], references: [id])
+
+  @@map("attachments")
+}
+
+model ActivityLog {
+  id        String   @id @default(uuid())
+  taskId    String   @map("task_id")
+  userId    String   @map("user_id")
+  action    String // 'status_changed' | 'assignee_added' | 'field_edited' | ...
+  meta      Json
+  createdAt DateTime @default(now()) @map("created_at")
+
+  task Task @relation(fields: [taskId], references: [id])
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("activity_log")
+}
