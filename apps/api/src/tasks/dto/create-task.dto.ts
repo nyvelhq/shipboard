@@ -1,4 +1,4 @@
-import { IsArray, IsDateString, IsIn, IsOptional, IsString, IsUUID, MinLength } from 'class-validator';
+import { IsArray, IsDateString, IsIn, IsInt, IsOptional, IsString, IsUUID, Min, MinLength } from 'class-validator';
 
 export class CreateTaskDto {
   @IsString()
@@ -29,4 +29,9 @@ export class CreateTaskDto {
   @IsArray()
   @IsUUID('4', { each: true })
   assigneeIds?: string[];
+
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  storyPoints?: number;
 }

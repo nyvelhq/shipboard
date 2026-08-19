@@ -10,10 +10,12 @@ import { TasksModule } from './tasks/tasks.module';
 import { CustomFieldsModule } from './custom-fields/custom-fields.module';
 import { CommentsModule } from './comments/comments.module';
 import { AttachmentsModule } from './attachments/attachments.module';
+import { SprintsModule } from './sprints/sprints.module';
 import { HealthController } from './health.controller';
 
-// Sprints is Week 9-10 work per HANDOFF.md — not stubbed here for the same
-// reason nothing else in this scaffold is: no fake-finished code to unwind.
+// Timeline (Gantt) is Week 11 work per HANDOFF.md — not stubbed here for
+// the same reason nothing else in this scaffold is: no fake-finished code
+// to unwind later.
 @Module({
   imports: [
     PrismaModule,
@@ -27,6 +29,7 @@ import { HealthController } from './health.controller';
     CustomFieldsModule,
     CommentsModule,
     AttachmentsModule,
+    SprintsModule,
   ],
   controllers: [HealthController],
 })

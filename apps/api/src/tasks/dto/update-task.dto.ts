@@ -1,4 +1,4 @@
-import { IsArray, IsDateString, IsIn, IsObject, IsOptional, IsString, IsUUID, MinLength } from 'class-validator';
+import { IsArray, IsDateString, IsIn, IsInt, IsObject, IsOptional, IsString, IsUUID, Min, MinLength } from 'class-validator';
 
 export class UpdateTaskDto {
   @IsOptional()
@@ -30,6 +30,18 @@ export class UpdateTaskDto {
   @IsArray()
   @IsUUID('4', { each: true })
   assigneeIds?: string[];
+
+  // Explicit null clears the Task's Sprint (moves it back to the backlog);
+  // omitted leaves it unchanged. IsOptional() in class-validator skips
+  // validation for both null and undefined, so this is safe as written.
+  @IsOptional()
+  @IsUUID()
+  sprintId?: string | null;
+
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  storyPoints?: number;
 
   // fieldId -> value. Value shape depends on the field's type (string for
   // text/date/currency, number, boolean for checkbox, string[] for

@@ -7,6 +7,7 @@ import { UpdateTaskDto } from './dto/update-task.dto';
 
 const TASK_INCLUDE = {
   status: true,
+  sprint: true,
   assignees: { include: { user: { select: { id: true, name: true, email: true } } } },
   customFieldValues: { include: { customField: true } },
 } as const;
@@ -35,6 +36,7 @@ export class TasksService {
         name: dto.name,
         description: dto.description,
         priority: dto.priority ?? 'normal',
+        storyPoints: dto.storyPoints,
         startDate: dto.startDate ? new Date(dto.startDate) : undefined,
         dueDate: dto.dueDate ? new Date(dto.dueDate) : undefined,
         position,
@@ -118,6 +120,7 @@ export class TasksService {
     await this.findOne(workspaceId, spaceId, listId, taskId);
     if (dto.statusId) await this.assertStatusBelongsToList(dto.statusId, listId);
     if (dto.assigneeIds) await this.assertAssigneesAreMembers(workspaceId, dto.assigneeIds);
+    if (dto.sprintId) await this.assertSprintBelongsToList(dto.sprintId, listId);
     if (dto.customFieldValues) {
       await this.assertCustomFieldsApplicable(workspaceId, spaceId, listId, Object.keys(dto.customFieldValues));
     }
@@ -150,6 +153,8 @@ export class TasksService {
           description: dto.description,
           statusId: dto.statusId,
           priority: dto.priority,
+          sprintId: dto.sprintId, // string assigns, null clears (backlog), undefined leaves unchanged
+          storyPoints: dto.storyPoints,
           startDate: dto.startDate ? new Date(dto.startDate) : undefined,
           dueDate: dto.dueDate ? new Date(dto.dueDate) : undefined,
         },
@@ -177,6 +182,13 @@ export class TasksService {
     const status = await this.prisma.status.findUnique({ where: { id: statusId } });
     if (!status || status.listId !== listId) {
       throw new BadRequestException('Status does not belong to this List.');
+    }
+  }
+
+  private async assertSprintBelongsToList(sprintId: string, listId: string) {
+    const sprint = await this.prisma.sprint.findUnique({ where: { id: sprintId } });
+    if (!sprint || sprint.listId !== listId) {
+      throw new BadRequestException('Sprint does not belong to this List.');
     }
   }
 

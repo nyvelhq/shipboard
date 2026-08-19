@@ -113,18 +113,32 @@ export interface Attachment {
   uploader: { id: string; name: string; email: string };
 }
 
+export interface Sprint {
+  id: string;
+  listId: string;
+  name: string;
+  goal: string | null;
+  startDate: string;
+  endDate: string;
+  status: 'planned' | 'active' | 'closed';
+  tasks?: Task[];
+}
+
 export interface Task {
   id: string;
   listId: string;
   parentTaskId: string | null;
   statusId: string;
+  sprintId: string | null;
   name: string;
   description: string | null;
   priority: string;
+  storyPoints: number | null;
   startDate: string | null;
   dueDate: string | null;
   position: number;
   status: Status;
+  sprint: Sprint | null;
   assignees: TaskAssignee[];
   customFieldValues: CustomFieldValue[];
   subtasks?: Task[];
@@ -135,10 +149,20 @@ export interface TaskInput {
   description?: string;
   priority?: string;
   statusId?: string;
+  sprintId?: string | null;
+  storyPoints?: number;
   startDate?: string;
   dueDate?: string;
   assigneeIds?: string[];
   customFieldValues?: Record<string, unknown>;
+}
+
+export interface SprintInput {
+  name?: string;
+  goal?: string;
+  startDate?: string;
+  endDate?: string;
+  status?: string;
 }
 
 export const api = {
@@ -300,6 +324,40 @@ export const api = {
   ) =>
     request<{ ok: true }>(
       `/workspaces/${workspaceId}/spaces/${spaceId}/lists/${listId}/tasks/${taskId}/attachments/${attachmentId}`,
+      { method: 'DELETE' },
+      token,
+    ),
+
+  listSprints: (token: string, workspaceId: string, spaceId: string, listId: string) =>
+    request<Sprint[]>(`/workspaces/${workspaceId}/spaces/${spaceId}/lists/${listId}/sprints`, {}, token),
+  createSprint: (token: string, workspaceId: string, spaceId: string, listId: string, input: SprintInput) =>
+    request<Sprint>(
+      `/workspaces/${workspaceId}/spaces/${spaceId}/lists/${listId}/sprints`,
+      { method: 'POST', body: JSON.stringify(input) },
+      token,
+    ),
+  getSprint: (token: string, workspaceId: string, spaceId: string, listId: string, sprintId: string) =>
+    request<Sprint>(
+      `/workspaces/${workspaceId}/spaces/${spaceId}/lists/${listId}/sprints/${sprintId}`,
+      {},
+      token,
+    ),
+  updateSprint: (
+    token: string,
+    workspaceId: string,
+    spaceId: string,
+    listId: string,
+    sprintId: string,
+    input: SprintInput,
+  ) =>
+    request<Sprint>(
+      `/workspaces/${workspaceId}/spaces/${spaceId}/lists/${listId}/sprints/${sprintId}`,
+      { method: 'PATCH', body: JSON.stringify(input) },
+      token,
+    ),
+  deleteSprint: (token: string, workspaceId: string, spaceId: string, listId: string, sprintId: string) =>
+    request<{ ok: true }>(
+      `/workspaces/${workspaceId}/spaces/${spaceId}/lists/${listId}/sprints/${sprintId}`,
       { method: 'DELETE' },
       token,
     ),
