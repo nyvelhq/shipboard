@@ -8,6 +8,7 @@ import { UpdateTaskDto } from './dto/update-task.dto';
 const TASK_INCLUDE = {
   status: true,
   assignees: { include: { user: { select: { id: true, name: true, email: true } } } },
+  customFieldValues: { include: { customField: true } },
 } as const;
 
 @Injectable()
@@ -117,6 +118,9 @@ export class TasksService {
     await this.findOne(workspaceId, spaceId, listId, taskId);
     if (dto.statusId) await this.assertStatusBelongsToList(dto.statusId, listId);
     if (dto.assigneeIds) await this.assertAssigneesAreMembers(workspaceId, dto.assigneeIds);
+    if (dto.customFieldValues) {
+      await this.assertCustomFieldsApplicable(workspaceId, spaceId, listId, Object.keys(dto.customFieldValues));
+    }
 
     const updated = await this.prisma.$transaction(async (tx) => {
       if (dto.assigneeIds) {
@@ -124,6 +128,18 @@ export class TasksService {
         if (dto.assigneeIds.length) {
           await tx.taskAssignee.createMany({
             data: dto.assigneeIds.map((assigneeId) => ({ taskId, userId: assigneeId })),
+          });
+        }
+      }
+      if (dto.customFieldValues) {
+        for (const [customFieldId, value] of Object.entries(dto.customFieldValues)) {
+          // eslint-disable-next-line no-await-in-loop
+          await tx.customFieldValue.upsert({
+            where: { taskId_customFieldId: { taskId, customFieldId } },
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            update: { value: value as any },
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            create: { taskId, customFieldId, value: value as any },
           });
         }
       }
@@ -171,6 +187,26 @@ export class TasksService {
     });
     if (count !== uniqueIds.length) {
       throw new BadRequestException('All assignees must be members of this workspace.');
+    }
+  }
+
+  private async assertCustomFieldsApplicable(
+    workspaceId: string,
+    spaceId: string,
+    listId: string,
+    fieldIds: string[],
+  ) {
+    const fields = await this.prisma.customField.findMany({ where: { id: { in: fieldIds } } });
+    if (fields.length !== fieldIds.length) {
+      throw new BadRequestException('One or more custom fields do not exist.');
+    }
+    const inScope = fields.every(
+      (f) =>
+        f.workspaceId === workspaceId &&
+        (f.listId === listId || (f.listId === null && (f.spaceId === spaceId || f.spaceId === null))),
+    );
+    if (!inScope) {
+      throw new BadRequestException('One or more custom fields are not visible on this List.');
     }
   }
 }

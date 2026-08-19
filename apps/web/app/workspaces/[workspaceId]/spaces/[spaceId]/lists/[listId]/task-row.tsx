@@ -21,6 +21,7 @@ interface TaskRowProps {
   onPatch: (taskId: string, input: TaskInput) => void;
   onDelete: (taskId: string) => void;
   onAddSubtask: (parentId: string) => void;
+  onOpenDetail: (task: Task) => void;
   subtaskDraft: Record<string, string>;
   setSubtaskDraft: Dispatch<SetStateAction<Record<string, string>>>;
 }
@@ -35,6 +36,7 @@ export function TaskRow({
   onPatch,
   onDelete,
   onAddSubtask,
+  onOpenDetail,
   subtaskDraft,
   setSubtaskDraft,
 }: TaskRowProps) {
@@ -68,14 +70,25 @@ export function TaskRow({
           ) : null}
         </td>
         <td className="px-3 py-2" style={{ paddingLeft: isSubtask ? 24 : undefined }}>
-          <input
-            defaultValue={task.name}
-            onBlur={(e) => {
-              const value = e.target.value.trim();
-              if (value && value !== task.name) onPatch(task.id, { name: value });
-            }}
-            className="w-full rounded border border-transparent bg-transparent px-1 py-0.5 text-sm hover:border-gray-200 focus:border-teal-600 focus:outline-none"
-          />
+          <div className="flex items-center gap-1">
+            <input
+              defaultValue={task.name}
+              onBlur={(e) => {
+                const value = e.target.value.trim();
+                if (value && value !== task.name) onPatch(task.id, { name: value });
+              }}
+              className="w-full rounded border border-transparent bg-transparent px-1 py-0.5 text-sm hover:border-gray-200 focus:border-teal-600 focus:outline-none"
+            />
+            <button
+              type="button"
+              onClick={() => onOpenDetail(task)}
+              className="shrink-0 rounded px-1 text-xs text-gray-300 hover:bg-gray-100 hover:text-teal-700"
+              title="Open details"
+              aria-label="Open task details"
+            >
+              ⤢
+            </button>
+          </div>
         </td>
         <td className="px-3 py-2">
           <select
@@ -152,6 +165,7 @@ export function TaskRow({
               onPatch={onPatch}
               onDelete={onDelete}
               onAddSubtask={onAddSubtask}
+              onOpenDetail={onOpenDetail}
               subtaskDraft={subtaskDraft}
               setSubtaskDraft={setSubtaskDraft}
             />

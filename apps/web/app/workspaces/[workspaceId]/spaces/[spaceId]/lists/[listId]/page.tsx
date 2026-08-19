@@ -3,11 +3,22 @@
 import { FormEvent, useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ApiError, TaskInput, api } from '@/lib/api';
+import { ApiError, Task, TaskInput, api } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { useListTasks } from '@/lib/use-list-tasks';
 import { TaskRow } from './task-row';
 import { ViewToggle } from './view-toggle';
+import { CustomFieldsManager } from './custom-fields-manager';
+import { TaskDetailPanel } from './task-detail-panel';
+
+function findTask(tasks: Task[], taskId: string): Task | undefined {
+  for (const task of tasks) {
+    if (task.id === taskId) return task;
+    const sub = task.subtasks?.find((s) => s.id === taskId);
+    if (sub) return sub;
+  }
+  return undefined;
+}
 
 export default function ListDetailPage() {
   const { token, ready } = useAuth();
@@ -15,7 +26,7 @@ export default function ListDetailPage() {
   const params = useParams<{ workspaceId: string; spaceId: string; listId: string }>();
   const { workspaceId, spaceId, listId } = params;
 
-  const { list, tasks, members, loading, error, setError, reload } = useListTasks(
+  const { list, tasks, members, customFields, loading, error, setError, reload } = useListTasks(
     token,
     workspaceId,
     spaceId,
@@ -26,6 +37,7 @@ export default function ListDetailPage() {
   const [creating, setCreating] = useState(false);
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const [subtaskDraft, setSubtaskDraft] = useState<Record<string, string>>({});
+  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!ready) return;
@@ -64,6 +76,7 @@ export default function ListDetailPage() {
     setError('');
     try {
       await api.deleteTask(token, workspaceId, spaceId, listId, taskId);
+      if (selectedTaskId === taskId) setSelectedTaskId(null);
       await reload();
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Failed to delete task.');
@@ -86,15 +99,25 @@ export default function ListDetailPage() {
 
   if (!ready || !token) return null;
 
+  const selectedTask = selectedTaskId ? findTask(tasks, selectedTaskId) : undefined;
+
   return (
     <main className="mx-auto max-w-5xl px-6 py-10">
       <Link href={`/workspaces/${workspaceId}`} className="text-sm text-teal-700 hover:underline">
         &larr; Back to workspace
       </Link>
-      <div className="mb-6 mt-2 flex items-center justify-between">
+      <div className="mb-4 mt-2 flex items-center justify-between">
         <h1>{loading ? 'Loading…' : list?.name}</h1>
         <ViewToggle workspaceId={workspaceId} spaceId={spaceId} listId={listId} active="list" />
       </div>
+
+      <CustomFieldsManager
+        token={token}
+        workspaceId={workspaceId}
+        listId={listId}
+        fields={customFields}
+        onChanged={reload}
+      />
 
       {error && <p className="mb-4 text-red-600">{error}</p>}
 
@@ -145,6 +168,7 @@ export default function ListDetailPage() {
                   onPatch={patchTask}
                   onDelete={removeTask}
                   onAddSubtask={addSubtask}
+                  onOpenDetail={(t) => setSelectedTaskId(t.id)}
                   subtaskDraft={subtaskDraft}
                   setSubtaskDraft={setSubtaskDraft}
                 />
@@ -152,6 +176,20 @@ export default function ListDetailPage() {
             </tbody>
           </table>
         </div>
+      )}
+
+      {selectedTask && (
+        <TaskDetailPanel
+          token={token}
+          workspaceId={workspaceId}
+          spaceId={spaceId}
+          listId={listId}
+          task={selectedTask}
+          customFields={customFields}
+          members={members}
+          onClose={() => setSelectedTaskId(null)}
+          onPatch={patchTask}
+        />
       )}
     </main>
   );

@@ -73,6 +73,46 @@ export interface TaskAssignee {
   user: { id: string; name: string; email: string };
 }
 
+export interface CustomField {
+  id: string;
+  workspaceId: string;
+  spaceId: string | null;
+  listId: string | null;
+  name: string;
+  type: 'text' | 'number' | 'currency' | 'dropdown' | 'multiselect' | 'date' | 'checkbox' | 'person';
+  options: string[] | null;
+}
+
+export interface CustomFieldValue {
+  id: string;
+  taskId: string;
+  customFieldId: string;
+  value: unknown;
+  customField: CustomField;
+}
+
+export interface Comment {
+  id: string;
+  taskId: string;
+  userId: string;
+  body: string;
+  createdAt: string;
+  updatedAt: string | null;
+  user: { id: string; name: string; email: string };
+}
+
+export interface Attachment {
+  id: string;
+  taskId: string;
+  uploadedBy: string;
+  url: string;
+  filename: string;
+  sizeBytes: number;
+  mimeType: string;
+  createdAt: string;
+  uploader: { id: string; name: string; email: string };
+}
+
 export interface Task {
   id: string;
   listId: string;
@@ -86,6 +126,7 @@ export interface Task {
   position: number;
   status: Status;
   assignees: TaskAssignee[];
+  customFieldValues: CustomFieldValue[];
   subtasks?: Task[];
 }
 
@@ -97,6 +138,7 @@ export interface TaskInput {
   startDate?: string;
   dueDate?: string;
   assigneeIds?: string[];
+  customFieldValues?: Record<string, unknown>;
 }
 
 export const api = {
@@ -176,4 +218,91 @@ export const api = {
       { method: 'POST', body: JSON.stringify(input) },
       token,
     ),
+
+  listCustomFields: (token: string, workspaceId: string, spaceId: string, listId: string) =>
+    request<CustomField[]>(
+      `/workspaces/${workspaceId}/spaces/${spaceId}/lists/${listId}/custom-fields`,
+      {},
+      token,
+    ),
+  createCustomField: (
+    token: string,
+    workspaceId: string,
+    input: { name: string; type: string; options?: string[]; spaceId?: string; listId?: string },
+  ) => request<CustomField>(`/workspaces/${workspaceId}/custom-fields`, { method: 'POST', body: JSON.stringify(input) }, token),
+  deleteCustomField: (token: string, workspaceId: string, fieldId: string) =>
+    request<{ ok: true }>(`/workspaces/${workspaceId}/custom-fields/${fieldId}`, { method: 'DELETE' }, token),
+
+  listComments: (token: string, workspaceId: string, spaceId: string, listId: string, taskId: string) =>
+    request<Comment[]>(
+      `/workspaces/${workspaceId}/spaces/${spaceId}/lists/${listId}/tasks/${taskId}/comments`,
+      {},
+      token,
+    ),
+  createComment: (
+    token: string,
+    workspaceId: string,
+    spaceId: string,
+    listId: string,
+    taskId: string,
+    body: string,
+  ) =>
+    request<Comment>(
+      `/workspaces/${workspaceId}/spaces/${spaceId}/lists/${listId}/tasks/${taskId}/comments`,
+      { method: 'POST', body: JSON.stringify({ body }) },
+      token,
+    ),
+  deleteComment: (
+    token: string,
+    workspaceId: string,
+    spaceId: string,
+    listId: string,
+    taskId: string,
+    commentId: string,
+  ) =>
+    request<{ ok: true }>(
+      `/workspaces/${workspaceId}/spaces/${spaceId}/lists/${listId}/tasks/${taskId}/comments/${commentId}`,
+      { method: 'DELETE' },
+      token,
+    ),
+
+  listAttachments: (token: string, workspaceId: string, spaceId: string, listId: string, taskId: string) =>
+    request<Attachment[]>(
+      `/workspaces/${workspaceId}/spaces/${spaceId}/lists/${listId}/tasks/${taskId}/attachments`,
+      {},
+      token,
+    ),
+  uploadAttachment: async (
+    token: string,
+    workspaceId: string,
+    spaceId: string,
+    listId: string,
+    taskId: string,
+    file: File,
+  ) => {
+    const form = new FormData();
+    form.append('file', file);
+    const res = await fetch(
+      `${API_URL}/workspaces/${workspaceId}/spaces/${spaceId}/lists/${listId}/tasks/${taskId}/attachments`,
+      { method: 'POST', headers: { Authorization: `Bearer ${token}` }, body: form },
+    );
+    const responseBody = await res.json().catch(() => ({}));
+    if (!res.ok) throw new ApiError(responseBody.message || 'Upload failed.');
+    return responseBody as Attachment;
+  },
+  deleteAttachment: (
+    token: string,
+    workspaceId: string,
+    spaceId: string,
+    listId: string,
+    taskId: string,
+    attachmentId: string,
+  ) =>
+    request<{ ok: true }>(
+      `/workspaces/${workspaceId}/spaces/${spaceId}/lists/${listId}/tasks/${taskId}/attachments/${attachmentId}`,
+      { method: 'DELETE' },
+      token,
+    ),
 };
+
+export { API_URL };

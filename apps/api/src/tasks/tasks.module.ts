@@ -8,5 +8,6 @@ import { RealtimeModule } from '../realtime/realtime.module';
   imports: [ListsModule, RealtimeModule],
   controllers: [TasksController],
   providers: [TasksService],
+  exports: [TasksService],
 })
 export class TasksModule {}

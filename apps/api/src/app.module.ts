@@ -7,11 +7,13 @@ import { SpacesModule } from './spaces/spaces.module';
 import { FoldersModule } from './folders/folders.module';
 import { ListsModule } from './lists/lists.module';
 import { TasksModule } from './tasks/tasks.module';
+import { CustomFieldsModule } from './custom-fields/custom-fields.module';
+import { CommentsModule } from './comments/comments.module';
+import { AttachmentsModule } from './attachments/attachments.module';
 import { HealthController } from './health.controller';
 
-// Sprints, CustomFields, Comments, Attachments modules are Week 5-8 work
-// per HANDOFF.md — not stubbed here for the same reason nothing else in
-// this scaffold is: no fake-finished code to unwind later.
+// Sprints is Week 9-10 work per HANDOFF.md — not stubbed here for the same
+// reason nothing else in this scaffold is: no fake-finished code to unwind.
 @Module({
   imports: [
     PrismaModule,
@@ -22,6 +24,9 @@ import { HealthController } from './health.controller';
     FoldersModule,
     ListsModule,
     TasksModule,
+    CustomFieldsModule,
+    CommentsModule,
+    AttachmentsModule,
   ],
   controllers: [HealthController],
 })
