@@ -248,7 +248,8 @@ backlog to clear mechanically:
 - **Task dependencies.** `TaskDependency` is schema-ready
   (`blockingTaskId`/`blockedTaskId`) but has no endpoints and no UI — the
   Timeline view doesn't draw dependency arrows. A real feature, not a
-  quick add; genuinely out of scope for what got built here.
+  quick add; genuinely out of scope for what got built here. (Its
+  sibling gap, `Tag`/`TaskTag`, is no longer on this list — see below.)
 - **CORS is wide open** (`app.enableCors()`, no origin allowlist) — fine
   for local dev, not for a real deployment. Needs an explicit allowed-
   origins list before this goes anywhere near production.
@@ -264,6 +265,22 @@ backlog to clear mechanically:
   workspace can't be orphaned. This is what gives the role-gated deletes
   something real to bite on — see the RBAC bullet above for how the
   restriction itself was verified before this existed.
+- **Tags/labels.** `Tag`/`TaskTag` had existed in the schema with zero
+  code on top since the original scaffold — the fastest of the two
+  "schema-ready" gaps flagged in a feature review (see git log for the
+  full review artifact). Workspace-scoped, create open to any member,
+  delete gated to owner/admin (same reasoning as Custom Field delete —
+  shared taxonomy). Task↔Tag association rides the existing
+  `UpdateTaskDto` PATCH path as `tagIds: string[]`, full-replace,
+  exactly like `assigneeIds` already works — not a new convention.
+  Editing lives in the Task detail panel (click-to-toggle chips); the
+  List row and Board card render the result as read-only pills, the
+  same split already used for Attachments/Comments/Acceptance Criteria.
+  Caught and fixed a real bug before shipping on top of it:
+  `TaskTag.tag` had no `onDelete` rule — deleting an in-use Tag would
+  have hit the exact same unhandled-FK-error class already fixed
+  everywhere else. Fixed at the schema level first (migration:
+  `tag_cascade_delete`), same approach as before.
 
 ## Where this stands
 
