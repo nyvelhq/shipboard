@@ -10,22 +10,24 @@ plan: **[Shipboard PRD & Architecture Plan](https://claude.ai/code/artifact/7d40
 
 ## What's here
 
-Weeks 1-8 of the 12-week plan are done. Two npm workspaces:
+Weeks 1-10 of the 12-week plan are done. Two npm workspaces:
 
 - `apps/api` — NestJS + Prisma. Auth (signup/login), permission-checked
   Workspace → Space → Folder → List → Task CRUD (with subtasks, status
-  transitions, assignees), Custom Fields, Comments, and Attachments (local
-  disk storage), plus a Socket.IO gateway that broadcasts changes to every
-  client viewing the same List in real time. The full data model from the
-  PRD is in `apps/api/prisma/schema.prisma`, migrated against Postgres.
+  transitions, assignees), Custom Fields, Comments, Attachments (local
+  disk storage), and Sprints (story points, velocity), plus a Socket.IO
+  gateway that broadcasts changes to every client viewing the same List
+  in real time. The full data model from the PRD is in
+  `apps/api/prisma/schema.prisma`, migrated against Postgres.
 - `apps/web` — Next.js 14 App Router. Sign-in/sign-up, a Workspace list, a
   Workspace detail view, a List view with an editable Task table, a Board
-  (Kanban) view with drag-and-drop, and a Task detail panel (description,
-  custom fields, attachments, comments) — List/Board/detail all update
-  live across open tabs without a reload.
+  (Kanban) view with drag-and-drop, a Task detail panel (description,
+  custom fields, attachments, comments), and Sprint planning (backlog ↔
+  sprint assignment, velocity tracking) — List/Board/detail/Sprints all
+  update live across open tabs without a reload.
 
-No Sprints or Timeline (Gantt) view yet — that's Week 9-10 onward. See
-`HANDOFF.md` for the exact boundary.
+No Timeline (Gantt) view yet — that's Week 11 onward. See `HANDOFF.md`
+for the exact boundary.
 
 ## Quickstart
 

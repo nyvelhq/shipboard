@@ -92,19 +92,29 @@ exactly where to start.
   List-view row) showing description, custom fields, attachments, and
   comments for one Task. This is the surface Week 7-8's collaboration
   features actually needed; nothing like it existed before.
-- `lib/api.ts` is the typed client for every endpoint through Week 7-8.
+- **Sprints** — `/workspaces/[id]/spaces/[id]/lists/[id]/sprints`: create
+  a Sprint (name, goal, date range), a two-column detail page (Backlog /
+  In this Sprint) to move Tasks in and out via plain buttons — no
+  drag-and-drop here, deliberately, given the Week 5-6 note below about
+  verifying native HTML5 DnD through this session's tooling. Story points
+  editable inline; Start/Close buttons drive the Sprint's
+  `planned -> active -> closed` state machine. Velocity (`done points /
+  total points`) is computed client-side from `GET .../sprints/:id`'s own
+  task list, no separate aggregation endpoint. `Task.sprintId` and
+  `Task.storyPoints` — present in the schema since Week 1-2, unused until
+  now — flow through the same `UpdateTaskDto` every other Task field uses;
+  `sprintId: null` explicitly clears a Task's Sprint (back to backlog).
+- `lib/api.ts` is the typed client for every endpoint through Week 9-10.
 - `docker-compose.yml` for local Postgres + Redis, CI that installs,
   generates the Prisma client, and builds both workspaces on every push.
 
-**Weeks 1-2 through 7-8 are done.** Verified live in a browser, not just
-build checks. Most recently: created a dropdown custom field and set both
-it and a pre-existing text field's value on a Task through the actual UI,
-confirmed both persisted via a direct API read; uploaded a file and posted
-a comment through the detail panel, both appeared correctly; confirmed the
-ownership guard rejects a mismatched-taskId upload before any disk write.
-Also re-confirmed real-time sync survived these changes — a Task created
-via a disconnected curl client still appeared in an open tab with zero
-manual reload.
+**Weeks 1-2 through 9-10 are done.** Verified live in a browser, not just
+build checks. Most recently: created a Sprint, added a backlog Task to it
+through the actual UI (confirmed it left the Backlog column and appeared
+In this Sprint), set its story points, then changed the Task's status to
+Done from the List view and confirmed velocity recalculated correctly
+(0/5 → 5/5) after navigating back — proving the Sprint page and List page
+read the same underlying Task rows, not a stale copy.
 
 **One unverified piece from Week 5-6, still open:** the literal HTML5 drag
 *gesture* on the Board couldn't be confirmed through this session's
@@ -137,21 +147,23 @@ territory, not started:
 - **S3 (or equivalent) for Attachments.** Currently local disk — fine for
   a single dev machine, not for a deployed multi-instance app. See the
   note above.
-- Sprints, Timeline (Gantt) view.
+- **Sprint assignment on the Board view.** The Board doesn't show or
+  filter by Sprint yet — it's still List-wide only.
+- Timeline (Gantt) view.
 - The Gantt component decision (Bryntum vs. DHTMLX vs. build) — the PRD
   flags this as a build-or-buy call that should be pinned *before* Week 11,
   not during it.
 
-## Start here — Week 9-10
+## Start here — Week 11
 
-Per the PRD's plan, Week 9-10 is Sprints + Agile/Scrum tooling: Sprint
-CRUD nested under a List (the `Sprint` model already exists — `startDate`/
-`endDate`/`goal`/`status`), assigning Tasks to a Sprint (`Task.sprintId`,
-already on the schema, unused so far), and velocity tracking off
-`Task.storyPoints` (also already on the schema, unused). Follow the same
-ownership-chain pattern as everything else: a Sprint's `listId` must
-resolve back to the Space/Workspace in the URL, the same way Tasks already
-do via `ListsService.findOne`.
+Per the PRD's plan, Week 11 is the Timeline (Gantt) view — the one item
+in this whole plan with a real build-or-buy decision attached (Bryntum vs.
+DHTMLX vs. hand-built), and the PRD is explicit that decision should be
+made *before* the week starts, not mid-build. Read the PRD's architecture
+section on this before writing any Gantt code. Whichever direction is
+chosen, `Task.startDate`/`Task.dueDate` and `TaskDependency` (schema-ready,
+unused so far — `blockingTaskId`/`blockedTaskId`) are what a Gantt view
+needs beyond what already exists; no new Task fields should be required.
 
 ## Conventions to keep
 
