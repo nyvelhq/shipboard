@@ -205,6 +205,7 @@ export default function ListDetailPage() {
           customFields={customFields}
           members={members}
           allTags={tags}
+          allTasks={tasks}
           onClose={() => setSelectedTaskId(null)}
           onPatch={patchTask}
         />

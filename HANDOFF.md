@@ -245,11 +245,21 @@ backlog to clear mechanically:
   rendering gaps, not data gaps; the underlying data is already fetched.
 - **S3 (or equivalent) for Attachments.** Currently local disk — fine for
   a single dev machine, not for a deployed multi-instance app.
-- **Task dependencies.** `TaskDependency` is schema-ready
-  (`blockingTaskId`/`blockedTaskId`) but has no endpoints and no UI — the
-  Timeline view doesn't draw dependency arrows. A real feature, not a
-  quick add; genuinely out of scope for what got built here. (Its
-  sibling gap, `Tag`/`TaskTag`, is no longer on this list — see below.)
+- **Task dependencies.** `TaskDependency` had existed in the schema with
+  zero code on top — the second of the two "schema-ready" gaps flagged
+  in a feature review (see git log for the full review artifact; its
+  sibling, `Tag`/`TaskTag`, is described below). Dedicated endpoints
+  under `tasks/:taskId/dependencies` (POST/GET/DELETE), not folded into
+  the Task PATCH body like `tagIds` — a dependency is an individual
+  directed edge needing its own validation (self-block check, duplicate
+  check, cycle detection via in-memory BFS over the List's dependency
+  graph), not a settable set. Open to any workspace member (matches the
+  Acceptance Criteria treatment — collaborative content, not a shared
+  taxonomy — so no role gate here, unlike Tag/Custom Field delete). The
+  Task detail panel shows "Blocked by" / "Blocking" lists with a
+  same-List task picker to add a new blocker. Timeline dependency
+  *arrows* are a deliberate follow-up, not included here — a purely
+  visual layer on top of data that's now real.
 - **CORS is wide open** (`app.enableCors()`, no origin allowlist) — fine
   for local dev, not for a real deployment. Needs an explicit allowed-
   origins list before this goes anywhere near production.

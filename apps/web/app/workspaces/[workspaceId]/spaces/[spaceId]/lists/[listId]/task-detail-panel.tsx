@@ -11,6 +11,7 @@ import {
   Status,
   Tag,
   Task,
+  TaskDependencies,
   TaskInput,
   api,
   ApiError,
@@ -36,6 +37,7 @@ interface Props {
   customFields: CustomField[];
   members: Member[];
   allTags: Tag[];
+  allTasks: Task[];
   onClose: () => void;
   onPatch: (taskId: string, input: TaskInput) => Promise<void>;
 }
@@ -50,6 +52,7 @@ export function TaskDetailPanel({
   customFields,
   members,
   allTags,
+  allTasks,
   onClose,
   onPatch,
 }: Props) {
@@ -59,6 +62,9 @@ export function TaskDetailPanel({
   const [comments, setComments] = useState<Comment[]>([]);
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [criteria, setCriteria] = useState<AcceptanceCriterion[]>([]);
+  const [dependencies, setDependencies] = useState<TaskDependencies>({ blockedBy: [], blocking: [] });
+  const [blockerTaskId, setBlockerTaskId] = useState('');
+  const [addingBlocker, setAddingBlocker] = useState(false);
   const [newComment, setNewComment] = useState('');
   const [postingComment, setPostingComment] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -78,14 +84,16 @@ export function TaskDetailPanel({
   async function load() {
     setError('');
     try {
-      const [commentData, attachmentData, criteriaData] = await Promise.all([
+      const [commentData, attachmentData, criteriaData, dependencyData] = await Promise.all([
         api.listComments(token, workspaceId, spaceId, listId, task.id),
         api.listAttachments(token, workspaceId, spaceId, listId, task.id),
         api.listAcceptanceCriteria(token, workspaceId, spaceId, listId, task.id),
+        api.listDependencies(token, workspaceId, spaceId, listId, task.id),
       ]);
       setComments(commentData);
       setAttachments(attachmentData);
       setCriteria(criteriaData);
+      setDependencies(dependencyData);
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Failed to load task details.');
     }
@@ -254,6 +262,36 @@ export function TaskDetailPanel({
     }
   }
 
+  async function submitBlocker(e: FormEvent) {
+    e.preventDefault();
+    if (!blockerTaskId) return;
+    setAddingBlocker(true);
+    setError('');
+    try {
+      await api.createDependency(token, workspaceId, spaceId, listId, task.id, blockerTaskId);
+      setBlockerTaskId('');
+      await load();
+    } catch (err) {
+      const message = err instanceof ApiError ? err.message : 'Failed to add dependency.';
+      setError(message);
+      toast.error(message);
+    } finally {
+      setAddingBlocker(false);
+    }
+  }
+
+  async function removeDependency(dependencyId: string) {
+    setError('');
+    try {
+      await api.deleteDependency(token, workspaceId, spaceId, listId, task.id, dependencyId);
+      await load();
+    } catch (err) {
+      const message = err instanceof ApiError ? err.message : 'Failed to remove dependency.';
+      setError(message);
+      toast.error(message);
+    }
+  }
+
   const fieldLabelClass = 'mb-1 block text-xs font-semibold uppercase tracking-wide text-gray-500';
   const sideInputClass =
     'w-full rounded-md border border-gray-200 bg-white px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-teal-600';
@@ -360,6 +398,99 @@ export function TaskDetailPanel({
                   type="submit"
                   disabled={addingCriterion}
                   className="rounded-md bg-gray-900 px-3 py-1.5 text-sm font-semibold text-white hover:bg-gray-800"
+                >
+                  Add
+                </button>
+              </form>
+            </section>
+
+            <section className="mb-6">
+              <h3 className={fieldLabelClass}>Dependencies</h3>
+
+              <div className="mb-2">
+                <p className="mb-1 text-xs font-medium text-gray-500">Blocked by</p>
+                {dependencies.blockedBy.length === 0 && (
+                  <p className="px-1 text-sm text-gray-400">Nothing is blocking this task.</p>
+                )}
+                <div className="flex flex-col gap-1">
+                  {dependencies.blockedBy.map((dep) => (
+                    <div
+                      key={dep.id}
+                      className="group flex items-center justify-between rounded px-1 py-1 hover:bg-gray-50"
+                    >
+                      <span className="flex items-center gap-1.5 text-sm text-gray-800">
+                        <span
+                          className="h-2 w-2 shrink-0 rounded-full"
+                          style={{ background: dep.blockingTask?.status.color }}
+                        />
+                        {dep.blockingTask?.name}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => removeDependency(dep.id)}
+                        className="shrink-0 text-gray-300 opacity-0 hover:text-red-600 group-hover:opacity-100"
+                        aria-label="Remove dependency"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {dependencies.blocking.length > 0 && (
+                <div className="mb-2">
+                  <p className="mb-1 text-xs font-medium text-gray-500">Blocking</p>
+                  <div className="flex flex-col gap-1">
+                    {dependencies.blocking.map((dep) => (
+                      <div
+                        key={dep.id}
+                        className="group flex items-center justify-between rounded px-1 py-1 hover:bg-gray-50"
+                      >
+                        <span className="flex items-center gap-1.5 text-sm text-gray-800">
+                          <span
+                            className="h-2 w-2 shrink-0 rounded-full"
+                            style={{ background: dep.blockedTask?.status.color }}
+                          />
+                          {dep.blockedTask?.name}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => removeDependency(dep.id)}
+                          className="shrink-0 text-gray-300 opacity-0 hover:text-red-600 group-hover:opacity-100"
+                          aria-label="Remove dependency"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <form onSubmit={submitBlocker} className="mt-2 flex gap-2">
+                <select
+                  value={blockerTaskId}
+                  onChange={(e) => setBlockerTaskId(e.target.value)}
+                  className="flex-1 rounded-md border border-gray-200 px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-teal-600"
+                >
+                  <option value="">Add a blocker…</option>
+                  {allTasks
+                    .filter(
+                      (t) =>
+                        t.id !== task.id &&
+                        !dependencies.blockedBy.some((dep) => dep.blockingTaskId === t.id),
+                    )
+                    .map((t) => (
+                      <option key={t.id} value={t.id}>
+                        {t.name}
+                      </option>
+                    ))}
+                </select>
+                <button
+                  type="submit"
+                  disabled={addingBlocker || !blockerTaskId}
+                  className="rounded-md bg-gray-900 px-3 py-1.5 text-sm font-semibold text-white hover:bg-gray-800 disabled:opacity-50"
                 >
                   Add
                 </button>

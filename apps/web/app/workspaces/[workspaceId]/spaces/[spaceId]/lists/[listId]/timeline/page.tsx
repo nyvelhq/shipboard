@@ -224,6 +224,7 @@ export default function TimelinePage() {
           customFields={customFields}
           members={members}
           allTags={tags}
+          allTasks={tasks}
           onClose={() => setSelectedTaskId(null)}
           onPatch={patchTask}
         />

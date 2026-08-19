@@ -122,6 +122,25 @@ export interface AcceptanceCriterion {
   createdAt: string;
 }
 
+export interface DependencyTaskSummary {
+  id: string;
+  name: string;
+  status: Status;
+}
+
+export interface TaskDependency {
+  id: string;
+  blockingTaskId: string;
+  blockedTaskId: string;
+  blockingTask?: DependencyTaskSummary;
+  blockedTask?: DependencyTaskSummary;
+}
+
+export interface TaskDependencies {
+  blockedBy: TaskDependency[];
+  blocking: TaskDependency[];
+}
+
 export interface Tag {
   id: string;
   workspaceId: string;
@@ -460,6 +479,44 @@ export const api = {
   ) =>
     request<{ ok: true }>(
       `/workspaces/${workspaceId}/spaces/${spaceId}/lists/${listId}/tasks/${taskId}/acceptance-criteria/${criterionId}`,
+      { method: 'DELETE' },
+      token,
+    ),
+  listDependencies: (
+    token: string,
+    workspaceId: string,
+    spaceId: string,
+    listId: string,
+    taskId: string,
+  ) =>
+    request<TaskDependencies>(
+      `/workspaces/${workspaceId}/spaces/${spaceId}/lists/${listId}/tasks/${taskId}/dependencies`,
+      {},
+      token,
+    ),
+  createDependency: (
+    token: string,
+    workspaceId: string,
+    spaceId: string,
+    listId: string,
+    taskId: string,
+    blockingTaskId: string,
+  ) =>
+    request<TaskDependency>(
+      `/workspaces/${workspaceId}/spaces/${spaceId}/lists/${listId}/tasks/${taskId}/dependencies`,
+      { method: 'POST', body: JSON.stringify({ blockingTaskId }) },
+      token,
+    ),
+  deleteDependency: (
+    token: string,
+    workspaceId: string,
+    spaceId: string,
+    listId: string,
+    taskId: string,
+    dependencyId: string,
+  ) =>
+    request<{ ok: true }>(
+      `/workspaces/${workspaceId}/spaces/${spaceId}/lists/${listId}/tasks/${taskId}/dependencies/${dependencyId}`,
       { method: 'DELETE' },
       token,
     ),
