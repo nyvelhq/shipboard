@@ -22,9 +22,10 @@ import { useToast } from '@/components/toast/toast-context';
 const PRIORITIES = ['urgent', 'high', 'normal', 'low'];
 
 // Matches the backend sentinel (attachments.service.ts LINK_MIME_TYPE) —
-// a link attachment has no uploaded file, so its "url" is an external
-// address, not a path on this server, and shouldn't be prefixed with
-// API_URL when rendered.
+// a link attachment has no uploaded file. Used here only to pick the
+// Link2 vs. Paperclip icon; the href itself is resolved by URL shape
+// below, since an uploaded file's url is relative for local disk storage
+// but already-absolute for S3 (a presigned URL), same as a link's.
 const LINK_MIME_TYPE = 'text/uri-list';
 
 interface Props {
@@ -516,7 +517,7 @@ export function TaskDetailPanel({
                       className="flex items-center justify-between rounded border border-gray-200 px-3 py-2 text-sm"
                     >
                       <a
-                        href={isLink ? att.url : `${API_URL}${att.url}`}
+                        href={att.url.startsWith('http') ? att.url : `${API_URL}${att.url}`}
                         target="_blank"
                         rel="noreferrer"
                         className="flex min-w-0 items-center gap-1.5 truncate text-teal-700 hover:underline"
