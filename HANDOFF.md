@@ -236,8 +236,6 @@ legitimate scope decision, not a defect — triage against real user
 feedback before building further, rather than treating this list as a
 backlog to clear mechanically:
 
-- **S3 (or equivalent) for Attachments.** Currently local disk — fine for
-  a single dev machine, not for a deployed multi-instance app.
 - **Task dependencies.** `TaskDependency` had existed in the schema with
   zero code on top — the second of the two "schema-ready" gaps flagged
   in a feature review (see git log for the full review artifact; its
@@ -308,6 +306,21 @@ backlog to clear mechanically:
   where it sits without filtering, and that badge disappears once a
   specific Sprint is chosen, since it'd be redundant with the filter
   itself.
+- **S3 for Attachments.** Was local-disk-only. Now behind a
+  `StorageService` abstraction (`apps/api/src/storage`) switched by a
+  `STORAGE_DRIVER` env var — `local` (default, so existing setups need
+  zero config change) or `s3` (any S3-compatible endpoint, not just
+  AWS). `Attachment.url` now stores a bare storage key, not a
+  ready-to-use path; it's resolved to an actual URL at read time — a
+  static-served relative path for local, a short-lived presigned GET
+  URL for S3 — so switching drivers never needs a data migration.
+  MinIO was added to `docker-compose.yml` so `s3` mode is verifiable
+  locally without real AWS credentials; going to real S3 in production
+  is an env var change only. Caught and fixed a real bug while building
+  this: deleting an attachment only ever removed the DB row, the
+  underlying file was never deleted — local disk had been leaking
+  every deleted upload since Week 1-2. `StorageService.delete()` now
+  actually removes the object, for both drivers.
 
 ## Where this stands
 
