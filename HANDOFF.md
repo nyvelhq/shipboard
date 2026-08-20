@@ -236,10 +236,6 @@ legitimate scope decision, not a defect — triage against real user
 feedback before building further, rather than treating this list as a
 backlog to clear mechanically:
 
-- **Custom fields and Sprint context on the Board view.** The Board's
-  cards show priority/assignee/due-date but not custom field values, and
-  the Board isn't Sprint-aware (no filter/grouping by Sprint) — both are
-  rendering gaps, not data gaps; the underlying data is already fetched.
 - **S3 (or equivalent) for Attachments.** Currently local disk — fine for
   a single dev machine, not for a deployed multi-instance app.
 - **Task dependencies.** `TaskDependency` had existed in the schema with
@@ -298,6 +294,20 @@ backlog to clear mechanically:
   read/write split as Tags, editing stays in the detail panel. Dropped
   the `members` prop that had been threaded through `TaskRow` purely to
   feed the old dropdown, once nothing referenced it anymore.
+- **Custom fields and Sprint context on the Board view.** Same shape as
+  the multi-assignee gap above — `useListTasks` already fetched
+  `customFields`, and every `Task` already carries its own `sprint`
+  reference, so no API or schema work was needed here either. BoardCard
+  now renders a compact "FieldName: value" badge per custom field that
+  has a value set (skips unset ones — no empty-badge clutter), handling
+  person/date/currency/checkbox/multiselect value shapes, not just
+  plain text. The Board also fetches the List's Sprints and gained a
+  filter dropdown (All sprints / Backlog / each Sprint by name) that
+  filters every column's tasks by `sprintId`; when "All sprints" is
+  selected each card shows a small Sprint/Backlog badge so you can see
+  where it sits without filtering, and that badge disappears once a
+  specific Sprint is chosen, since it'd be redundant with the filter
+  itself.
 
 ## Where this stands
 
