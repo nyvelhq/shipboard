@@ -251,9 +251,6 @@ backlog to clear mechanically:
   same-List task picker to add a new blocker. Timeline dependency
   *arrows* are a deliberate follow-up, not included here — a purely
   visual layer on top of data that's now real.
-- **CORS is wide open** (`app.enableCors()`, no origin allowlist) — fine
-  for local dev, not for a real deployment. Needs an explicit allowed-
-  origins list before this goes anywhere near production.
 - **No real invitation flow (email link).** What exists instead —
   `/workspaces/[id]/members`, "Add a member" — is deliberately scoped to
   *add by email*, not send an invite: this app has no email-sending
@@ -321,6 +318,20 @@ backlog to clear mechanically:
   underlying file was never deleted — local disk had been leaking
   every deleted upload since Week 1-2. `StorageService.delete()` now
   actually removes the object, for both drivers.
+- **CORS allowlist.** `app.enableCors()` had no origin allowlist, and
+  separately `RealtimeGateway`'s WebSocket CORS was hardcoded to
+  `'*'` — the same gap in two places, since the Socket.IO gateway has
+  its own CORS config independent of the REST app's. Both now read a
+  shared `getAllowedOrigins()` helper (`apps/api/src/common/cors.ts`),
+  driven by a `CORS_ORIGINS` env var with a `localhost:3000`/`3001`
+  default so local dev needs no config change. Needed an explicit
+  `dotenv` dependency and `import 'dotenv/config'` as the first line
+  of `main.ts` for this to be correct: `@WebSocketGateway`'s cors
+  option evaluates at class-decoration time — i.e. at module import
+  time, before any application code runs — so env vars had to be
+  loaded before the module graph even starts resolving, rather than
+  relying on `@prisma/client`'s incidental dotenv side effect firing
+  first, which would have been fragile and import-order-dependent.
 
 ## Where this stands
 
