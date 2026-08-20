@@ -10,10 +10,11 @@ import { Server, Socket } from 'socket.io';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../prisma/prisma.service';
 import { JwtPayload } from '../auth/jwt-payload.type';
+import { getAllowedOrigins } from '../common/cors';
 
 // Rooms are named "list:<listId>" — one room per List. A client joins after
 // the server verifies workspace membership, same check as every REST route.
-@WebSocketGateway({ cors: { origin: '*' } })
+@WebSocketGateway({ cors: { origin: getAllowedOrigins() } })
 export class RealtimeGateway implements OnGatewayConnection {
   @WebSocketServer()
   server!: Server;
