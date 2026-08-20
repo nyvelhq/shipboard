@@ -229,12 +229,15 @@ evidence of an app bug — the handler calls the exact `updateTask` path
 already proven correct two other ways. Worth a human actually dragging a
 card once.
 
-## What does NOT exist yet — deliberately
+## Gaps flagged by an earlier feature review — now closed
 
-Nothing here pretends to be further along than it is. All of it is a
-legitimate scope decision, not a defect — triage against real user
-feedback before building further, rather than treating this list as a
-backlog to clear mechanically:
+This section used to be called "What does NOT exist yet — deliberately."
+Every gap it originally listed (Tags, multi-assignee UI, Board custom
+fields/Sprint context, S3 for Attachments, the CORS allowlist, Task
+dependencies, and the real email invite flow below) has since been
+built and verified live — nothing is pending here anymore. Kept as a
+record of what each gap actually was and how it got closed, not as a
+backlog:
 
 - **Task dependencies.** `TaskDependency` had existed in the schema with
   zero code on top — the second of the two "schema-ready" gaps flagged
@@ -251,18 +254,6 @@ backlog to clear mechanically:
   same-List task picker to add a new blocker. Timeline dependency
   *arrows* are a deliberate follow-up, not included here — a purely
   visual layer on top of data that's now real.
-- **No real invitation flow (email link).** What exists instead —
-  `/workspaces/[id]/members`, "Add a member" — is deliberately scoped to
-  *add by email*, not send an invite: this app has no email-sending
-  infrastructure at all (no SendGrid/SES/etc.), and building one is a
-  separate, much bigger piece of work than adding a member. The target
-  needs an existing Shipboard account already; the UI says this
-  directly rather than implying a flow that doesn't exist. Gated to
-  owner/admin (`WorkspacesController.addMember`/`removeMember`), and the
-  workspace owner can't be removed (`Workspace.ownerId` check) so a
-  workspace can't be orphaned. This is what gives the role-gated deletes
-  something real to bite on — see the RBAC bullet above for how the
-  restriction itself was verified before this existed.
 - **Tags/labels.** `Tag`/`TaskTag` had existed in the schema with zero
   code on top since the original scaffold — the fastest of the two
   "schema-ready" gaps flagged in a feature review (see git log for the
@@ -332,6 +323,23 @@ backlog to clear mechanically:
   loaded before the module graph even starts resolving, rather than
   relying on `@prisma/client`'s incidental dotenv side effect firing
   first, which would have been fragile and import-order-dependent.
+- **Real email invite flow.** `WorkspacesController.addMember` only
+  ever added someone by email who already had a Shipboard account —
+  the last gap on this list. New `WorkspaceInvite` model (workspace,
+  email, role, token, inviter, expiry, acceptedAt), separate from
+  `addMember`'s instant-add, which stays as the "they already have an
+  account" path. `EmailService` (`apps/api/src/email`) mirrors
+  `StorageService`'s driver-switch shape: `EMAIL_DRIVER=console`
+  (default, logs the email, zero external dependency) or `=smtp` (any
+  SMTP server via `nodemailer` — Mailpit added to `docker-compose.yml`
+  for local testing, a real relay like SendGrid/SES in production,
+  since they all speak SMTP too). `InviteAcceptController` sits at the
+  top level, not nested under `workspaceId`, since the whole point is
+  granting membership the visitor doesn't have yet; accepting requires
+  the authenticated user's email to match the invite's. The `/invites/
+  [token]` page handles all three states — not signed in (round-trips
+  through `/login?redirect=...&email=...`), signed in as the wrong
+  person (offers to switch accounts), and ready to accept.
 
 ## Where this stands
 
@@ -357,8 +365,9 @@ a documented limitation shared by Playwright/Selenium/CDP-based tools
 generally. Drag a card on the Board once in a real browser before calling
 that specific interaction verified.
 
-From here, next work should be driven by actual usage — the "what does
-NOT exist yet" list above, not a mechanical week-by-week continuation.
+Every gap flagged by the feature review (see the section above) is now
+closed. From here, next work should be driven by actual usage and real
+feedback, not a mechanical continuation of any list in this document.
 
 ## Conventions to keep
 
