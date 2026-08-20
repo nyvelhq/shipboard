@@ -170,13 +170,29 @@ function BoardCard({
             </span>
           )}
         </div>
-        {task.assignees[0] && (
-          <span
-            className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-teal-700 text-[10px] font-semibold text-white"
-            title={task.assignees[0].user.name}
-          >
-            {task.assignees[0].user.name.slice(0, 1).toUpperCase()}
-          </span>
+        {task.assignees.length > 0 && (
+          <div className="flex -space-x-1.5">
+            {task.assignees.slice(0, 3).map((a) => (
+              <span
+                key={a.userId}
+                title={a.user.name}
+                className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-teal-700 text-[10px] font-semibold text-white ring-2 ring-white"
+              >
+                {a.user.name.slice(0, 1).toUpperCase()}
+              </span>
+            ))}
+            {task.assignees.length > 3 && (
+              <span
+                title={task.assignees
+                  .slice(3)
+                  .map((a) => a.user.name)
+                  .join(', ')}
+                className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-gray-300 text-[9px] font-semibold text-gray-700 ring-2 ring-white"
+              >
+                +{task.assignees.length - 3}
+              </span>
+            )}
+          </div>
         )}
       </div>
       {task.dueDate && (

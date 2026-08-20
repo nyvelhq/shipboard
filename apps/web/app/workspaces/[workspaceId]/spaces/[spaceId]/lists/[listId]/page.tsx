@@ -177,7 +177,6 @@ export default function ListDetailPage() {
                   task={task}
                   depth={0}
                   statuses={list?.statuses ?? []}
-                  members={members}
                   expanded={expanded}
                   setExpanded={setExpanded}
                   onPatch={patchTask}

@@ -127,6 +127,12 @@ export function TaskDetailPanel({
     await onPatch(task.id, { tagIds: nextIds });
   }
 
+  async function toggleAssignee(userId: string, shouldBeAssigned: boolean) {
+    const currentIds = task.assignees.map((a) => a.userId);
+    const nextIds = shouldBeAssigned ? [...currentIds, userId] : currentIds.filter((id) => id !== userId);
+    await onPatch(task.id, { assigneeIds: nextIds });
+  }
+
   async function submitComment(e: FormEvent) {
     e.preventDefault();
     if (!newComment.trim()) return;
@@ -631,21 +637,36 @@ export function TaskDetailPanel({
           {/* Metadata sidebar — 30% */}
           <div className="flex-[3] overflow-y-auto border-l border-gray-100 bg-gray-50/60 px-5 py-5">
             <div className="mb-4">
-              <label className={fieldLabelClass}>Assignee</label>
-              <select
-                value={task.assignees[0]?.userId ?? ''}
-                onChange={(e) =>
-                  onPatch(task.id, { assigneeIds: e.target.value ? [e.target.value] : [] })
-                }
-                className={sideInputClass}
-              >
-                <option value="">Unassigned</option>
-                {members.map((m) => (
-                  <option key={m.userId} value={m.userId}>
-                    {m.user.name}
-                  </option>
-                ))}
-              </select>
+              <label className={fieldLabelClass}>
+                Assignees {task.assignees.length > 0 && `(${task.assignees.length})`}
+              </label>
+              <div className="flex flex-wrap gap-1.5">
+                {members.map((m) => {
+                  const active = task.assignees.some((a) => a.userId === m.userId);
+                  return (
+                    <button
+                      key={m.userId}
+                      type="button"
+                      onClick={() => toggleAssignee(m.userId, !active)}
+                      className={`flex items-center gap-1.5 rounded-full py-0.5 pl-0.5 pr-2 text-xs font-medium transition-colors ${
+                        active
+                          ? 'bg-teal-700 text-white'
+                          : 'bg-white text-gray-600 ring-1 ring-inset ring-gray-200 hover:bg-gray-100'
+                      }`}
+                    >
+                      <span
+                        className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-[9px] font-semibold ${
+                          active ? 'bg-white/25 text-white' : 'bg-gray-200 text-gray-600'
+                        }`}
+                      >
+                        {m.user.name.slice(0, 1).toUpperCase()}
+                      </span>
+                      {m.user.name}
+                    </button>
+                  );
+                })}
+                {members.length === 0 && <p className="px-1 text-sm text-gray-400">No members yet.</p>}
+              </div>
             </div>
 
             <div className="mb-4">

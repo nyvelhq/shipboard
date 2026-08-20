@@ -1,7 +1,7 @@
 'use client';
 
 import { Dispatch, SetStateAction } from 'react';
-import { Member, Status, Task, TaskInput } from '@/lib/api';
+import { Status, Task, TaskInput } from '@/lib/api';
 
 const PRIORITIES = ['urgent', 'high', 'normal', 'low'];
 const PRIORITY_STYLES: Record<string, string> = {
@@ -15,7 +15,6 @@ interface TaskRowProps {
   task: Task;
   depth: number;
   statuses: Status[];
-  members: Member[];
   expanded: Record<string, boolean>;
   setExpanded: Dispatch<SetStateAction<Record<string, boolean>>>;
   onPatch: (taskId: string, input: TaskInput) => void;
@@ -30,7 +29,6 @@ export function TaskRow({
   task,
   depth,
   statuses,
-  members,
   expanded,
   setExpanded,
   onPatch,
@@ -119,18 +117,21 @@ export function TaskRow({
           </select>
         </td>
         <td className="px-3 py-2">
-          <select
-            value={task.assignees[0]?.userId ?? ''}
-            onChange={(e) => onPatch(task.id, { assigneeIds: e.target.value ? [e.target.value] : [] })}
-            className="rounded border border-gray-200 px-2 py-1 text-xs"
-          >
-            <option value="">Unassigned</option>
-            {members.map((m) => (
-              <option key={m.userId} value={m.userId}>
-                {m.user.name}
-              </option>
-            ))}
-          </select>
+          {task.assignees.length > 0 ? (
+            <div className="flex -space-x-1.5">
+              {task.assignees.map((a) => (
+                <span
+                  key={a.userId}
+                  title={a.user.name}
+                  className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-teal-700 text-[10px] font-semibold text-white ring-2 ring-white"
+                >
+                  {a.user.name.slice(0, 1).toUpperCase()}
+                </span>
+              ))}
+            </div>
+          ) : (
+            <span className="text-xs text-gray-300">Unassigned</span>
+          )}
         </td>
         <td className="px-3 py-2">
           <div className="flex flex-wrap gap-1">
@@ -174,7 +175,6 @@ export function TaskRow({
               task={sub}
               depth={depth + 1}
               statuses={statuses}
-              members={members}
               expanded={expanded}
               setExpanded={setExpanded}
               onPatch={onPatch}
