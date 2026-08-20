@@ -67,6 +67,26 @@ export interface Member {
   user: { id: string; name: string; email: string };
 }
 
+export interface WorkspaceInvite {
+  id: string;
+  workspaceId: string;
+  email: string;
+  role: string;
+  token: string;
+  createdAt: string;
+  expiresAt: string;
+  inviter: { id: string; name: string; email: string };
+}
+
+export interface InvitePreview {
+  workspaceName: string;
+  inviterName: string;
+  email: string;
+  role: string;
+  accepted: boolean;
+  expired: boolean;
+}
+
 export interface TaskAssignee {
   taskId: string;
   userId: string;
@@ -254,6 +274,23 @@ export const api = {
     ),
   removeMember: (token: string, workspaceId: string, userId: string) =>
     request<{ ok: true }>(`/workspaces/${workspaceId}/members/${userId}`, { method: 'DELETE' }, token),
+  listInvites: (token: string, workspaceId: string) =>
+    request<WorkspaceInvite[]>(`/workspaces/${workspaceId}/invites`, {}, token),
+  createInvite: (token: string, workspaceId: string, email: string, role: string) =>
+    request<WorkspaceInvite>(
+      `/workspaces/${workspaceId}/invites`,
+      { method: 'POST', body: JSON.stringify({ email, role }) },
+      token,
+    ),
+  revokeInvite: (token: string, workspaceId: string, inviteId: string) =>
+    request<{ ok: true }>(`/workspaces/${workspaceId}/invites/${inviteId}`, { method: 'DELETE' }, token),
+  getInvite: (inviteToken: string) => request<InvitePreview>(`/invites/${inviteToken}`, {}),
+  acceptInvite: (inviteToken: string, authToken: string) =>
+    request<{ workspaceId: string; workspaceName: string }>(
+      `/invites/${inviteToken}/accept`,
+      { method: 'POST' },
+      authToken,
+    ),
 
   listTasks: (token: string, workspaceId: string, spaceId: string, listId: string) =>
     request<Task[]>(`/workspaces/${workspaceId}/spaces/${spaceId}/lists/${listId}/tasks`, {}, token),

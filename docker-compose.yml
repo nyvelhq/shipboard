@@ -30,6 +30,16 @@ services:
     volumes:
       - miniodata:/data
 
+  # SMTP capture for local testing of EMAIL_DRIVER=smtp (see
+  # apps/api/.env.example) — invite emails land here instead of a real
+  # inbox. Web UI at http://localhost:8025. Not needed when
+  # EMAIL_DRIVER=console.
+  mailpit:
+    image: axllent/mailpit:latest
+    ports:
+      - "1025:1025"
+      - "8025:8025"
+
 volumes:
   pgdata:
   miniodata:

@@ -14,6 +14,7 @@ import { SprintsModule } from './sprints/sprints.module';
 import { AcceptanceCriteriaModule } from './acceptance-criteria/acceptance-criteria.module';
 import { TagsModule } from './tags/tags.module';
 import { TaskDependenciesModule } from './task-dependencies/task-dependencies.module';
+import { InvitesModule } from './invites/invites.module';
 import { HealthController } from './health.controller';
 
 @Module({
@@ -33,6 +34,7 @@ import { HealthController } from './health.controller';
     AcceptanceCriteriaModule,
     TagsModule,
     TaskDependenciesModule,
+    InvitesModule,
   ],
   controllers: [HealthController],
 })

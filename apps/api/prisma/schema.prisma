@@ -33,6 +33,7 @@ model User {
   comments        Comment[]
   attachments     Attachment[]
   activity        ActivityLog[]
+  sentInvites     WorkspaceInvite[] @relation("InviteInviter")
 
   @@map("users")
 }
@@ -50,6 +51,7 @@ model Workspace {
   spaces       Space[]
   tags         Tag[]
   customFields CustomField[]
+  invites      WorkspaceInvite[]
 
   @@map("workspaces")
 }
@@ -65,6 +67,28 @@ model WorkspaceMember {
 
   @@id([workspaceId, userId])
   @@map("workspace_members")
+}
+
+// A pending invitation to join a Workspace by email — distinct from
+// WorkspacesService.addMember, which requires the target to already have
+// a Shipboard account. This is the real "send an email" path: works for
+// people who don't have an account yet, since they sign up (or sign in)
+// against the invite's token rather than being added directly.
+model WorkspaceInvite {
+  id          String    @id @default(uuid())
+  workspaceId String    @map("workspace_id")
+  email       String
+  role        String // 'admin' | 'member' | 'guest' — never 'owner', same reasoning as AddMemberDto
+  token       String    @unique
+  invitedBy   String    @map("invited_by")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  expiresAt   DateTime  @map("expires_at")
+  acceptedAt  DateTime? @map("accepted_at")
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  inviter   User      @relation("InviteInviter", fields: [invitedBy], references: [id])
+
+  @@map("workspace_invites")
 }
 
 // ---------- Hierarchy: Workspace -> Space -> Folder -> List ----------
