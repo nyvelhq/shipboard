@@ -236,9 +236,6 @@ legitimate scope decision, not a defect — triage against real user
 feedback before building further, rather than treating this list as a
 backlog to clear mechanically:
 
-- **Multi-assignee UI.** The schema and API already support multiple
-  assignees per Task (`assigneeIds: string[]`); every view treats it as
-  single-select for now.
 - **Custom fields and Sprint context on the Board view.** The Board's
   cards show priority/assignee/due-date but not custom field values, and
   the Board isn't Sprint-aware (no filter/grouping by Sprint) — both are
@@ -291,6 +288,16 @@ backlog to clear mechanically:
   have hit the exact same unhandled-FK-error class already fixed
   everywhere else. Fixed at the schema level first (migration:
   `tag_cascade_delete`), same approach as before.
+- **Multi-assignee UI.** `assigneeIds: string[]` was already a
+  full-replace field on the Task PATCH endpoint; every view still
+  hardcoded `task.assignees[0]`. No API or schema work needed — pure
+  rendering gap. Task detail panel: the single-select dropdown became
+  toggleable member chips, same interaction as the Tags chips. List row
+  and Board card: single avatar became an overlapping avatar stack
+  (Board caps at 3 visible + a "+N" overflow badge), read-only — same
+  read/write split as Tags, editing stays in the detail panel. Dropped
+  the `members` prop that had been threaded through `TaskRow` purely to
+  feed the old dropdown, once nothing referenced it anymore.
 
 ## Where this stands
 
